@@ -1,4 +1,3 @@
-from collections import defaultdict
 from datetime import datetime
 import os
 from pathlib import Path
@@ -79,46 +78,81 @@ def is_today(timestamp):
 
 class StateTracker:
 
+    states = ['work', 'leisure', 'locked']
+
     def __init__(self):
+        self.cum_times = {state: 0 for state in self.states}
         self.logs_path = repo_dir / 'logs.tsv'
+        self.logs_path.touch()  # Creates file if it does not exist
+        self.last_check_path = repo_dir / 'last_check'
         self.logs = []
         self.load_logs()
-        self.cum_times = defaultdict(float)
 
     def update_cum_times(self, logs):
         for (start_timestamp, state), (end_timestamp, next_state) in zip(logs[:-1], logs[1:]):
             assert state != next_state
             self.cum_times[state] += (end_timestamp - start_timestamp)
 
-    def load_logs(self):
-        self.logs_path.touch()  # Creates file if it does not exist
+    def write_log(self, timestamp, state):
+        with self.logs_path.open('a') as f:
+            f.write(f'{timestamp}\t{state}\n')
+
+    def append_and_write_log(self, timestamp, state):
+        self.logs.append((timestamp, state))
+        self.write_log(timestamp, state)
+
+    def write_last_check(self, timestamp):
+        with self.last_check_path.open('w') as f:
+            f.write(str(timestamp) + '\n')
+
+    def read_last_check(self):
+        with self.last_check_path.open('r') as f:
+            return float(f.readline().strip())
+
+    def read_last_log(self):
+        try:
+            last_line = next(reverse_readline(self.logs_path))
+        except StopIteration:
+            return None
+        timestamp, state = last_line.strip().split('\t')
+        return float(timestamp), state
+
+    def was_run_today(self):
+        last_log = self.read_last_log()
+        if last_log is None:
+            return False
+        timestamp, _ = last_log
+        return is_today(timestamp)
+
+    def get_todays_logs(self):
+        logs = []
         for line in reverse_readline(self.logs_path):
             timestamp, state = line.strip().split('\t')
             if not is_today(float(timestamp)):
                 break
-            self.logs.append((float(timestamp), state))
-        if len(self.logs) == 0:
-            # If file was just created or no logs for today yet, we create one
-            timestamp = time.time()
-            state = get_state()
-            self.logs.append((timestamp, state))
-            with self.logs_path.open('a') as f:
-                f.write(f'{timestamp}\t{state}\n')
+            logs.append((float(timestamp), state))
+        return logs[::-1]  # We read the logs backward
+
+    def load_logs(self):
+        # TODO: If the program was killed two hours ago on work state, then it will probably count two hours of work
+        if not self.was_run_today():
+            self.write_log(time.time(), 'locked')
+        if self.read_last_log()[1] != 'locked':
+            # Add a log pretending the computer was locked at the last time the state was checked
+            self.write_log(self.read_last_check(), 'locked')
+        self.logs = self.get_todays_logs()
         self.update_cum_times(self.logs)
 
     def update_state(self):
         state = get_state()
         timestamp = time.time()
+        self.write_last_check(timestamp)
         last_timestamp, last_state = self.logs[-1]
         if state == last_state:
             return
-        # Write and save state
-        self.logs.append((timestamp, state))
-        with self.logs_path.open('a') as f:
-            f.write(f'{timestamp}\t{state}\n')
+        self.append_and_write_log(timestamp, state)
         # Update cumulative times
         self.update_cum_times([(last_timestamp, last_state), (timestamp, state)])
-        print(self.cum_times)
 
 
 if __name__ == '__main__':
