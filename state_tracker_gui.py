@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import time
 
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, Qt
 from PyQt5.QtWidgets import QApplication, QLabel, QDesktopWidget
@@ -23,6 +24,7 @@ class StateTrackerThread(QThread, StateTracker):
     def run(self):
         while True:
             self.update_state()
+            time.sleep(0.1)
 
 
 class Window(QLabel):
@@ -42,7 +44,7 @@ class Window(QLabel):
         screen = QDesktopWidget().screenGeometry()
         widget = self.geometry()
         x = screen.width() - widget.width()
-        y = 0
+        y = 100
         self.move(x, y)
 
     @pyqtSlot()
