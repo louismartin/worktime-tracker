@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
-import time
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread
-from PyQt5.QtWidgets import QApplication, QLabel
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, Qt
+from PyQt5.QtWidgets import QApplication, QLabel, QDesktopWidget
 
 from state_tracker import StateTracker
 
@@ -24,19 +23,27 @@ class StateTrackerThread(QThread, StateTracker):
     def run(self):
         while True:
             self.update_state()
-            time.sleep(0.1)
 
 
 class Window(QLabel):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(None*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.setWindowTitle('State Tracker')
-        self.setGeometry(1400, 10, 120, 60)
+        self.setGeometry(0, 0, 120, 60)
+        self.move_upper_right()
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.state_tracker_thread = StateTrackerThread()
         self.state_tracker_thread.state_changed.connect(self.update_ui)
         self.state_tracker_thread.start()
         self.update_ui()
+
+    def move_upper_right(self):
+        screen = QDesktopWidget().screenGeometry()
+        widget = self.geometry()
+        x = screen.width() - widget.width()
+        y = 0
+        self.move(x, y)
 
     @pyqtSlot()
     def update_ui(self):

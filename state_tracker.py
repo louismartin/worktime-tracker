@@ -28,7 +28,7 @@ def is_screen_locked():
 def get_state():
     desktop_number = get_desktop_number()
     if is_screen_locked():
-        return 'locked'
+        return 'idle'
     if desktop_number in [1, 2]:
         return 'work'
     if desktop_number in [3]:
@@ -78,7 +78,7 @@ def is_today(timestamp):
 
 class StateTracker:
 
-    states = ['work', 'leisure', 'locked']
+    states = ['work', 'leisure', 'idle']
 
     def __init__(self):
         self.cum_times = {state: 0 for state in self.states}
@@ -136,10 +136,10 @@ class StateTracker:
     def load_logs(self):
         # TODO: If the program was killed two hours ago on work state, then it will probably count two hours of work
         if not self.was_run_today():
-            self.write_log(time.time(), 'locked')
-        if self.read_last_log()[1] != 'locked':
-            # Add a log pretending the computer was locked at the last time the state was checked
-            self.write_log(self.read_last_check(), 'locked')
+            self.write_log(time.time(), 'idle')
+        if self.read_last_log()[1] != 'idle':
+            # Add a log pretending the computer was idle at the last time the state was checked
+            self.write_log(self.read_last_check(), 'idle')
         self.logs = self.get_todays_logs()
         self.update_cum_times(self.logs)
 
