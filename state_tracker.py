@@ -29,9 +29,11 @@ def get_state():
     desktop_number = get_desktop_number()
     if is_screen_locked():
         return 'idle'
-    if desktop_number in [1, 2]:
+    if desktop_number == 1:
         return 'work'
-    if desktop_number in [3]:
+    if desktop_number == 2:
+        return 'email'
+    if desktop_number == 3:
         return 'leisure'
     raise
 
@@ -78,7 +80,7 @@ def is_today(timestamp):
 
 class StateTracker:
 
-    states = ['work', 'leisure', 'idle']
+    states = ['work', 'email', 'leisure', 'idle']
 
     def __init__(self):
         self.cum_times = {state: 0 for state in self.states}
