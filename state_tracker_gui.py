@@ -8,9 +8,11 @@ from state_tracker import StateTracker
 
 
 def seconds_to_human_readable(seconds):
-    sec = timedelta(seconds=int(seconds))
+    sign = (lambda x: ('', '-')[x < 0])(seconds)
+    seconds = int(abs(seconds))
+    sec = timedelta(seconds=seconds)
     d = datetime(1, 1, 1) + sec
-    return f'{d.hour}h {d.minute}m'
+    return f'{sign}{d.hour}h{d.minute:02d}m'
 
 
 class StateTrackerThread(QThread, StateTracker):
@@ -50,18 +52,19 @@ class Window(QLabel):
 
     @pyqtSlot()
     def update_ui(self):
+        weekday = StateTracker.get_timestamp_weekday(time.time())
         cum_times = self.state_tracker_thread.cum_times
-        total_work_seconds = cum_times['work'] + cum_times['email']
-        total_work_time = seconds_to_human_readable(total_work_seconds)
-        email_time = seconds_to_human_readable(cum_times['email'])
-        leisure_time = seconds_to_human_readable(cum_times['leisure'])
-        target_work_seconds = 6 * 3600
-        ratio = total_work_seconds / target_work_seconds
-        text = f'{int(100 * ratio)}% ({total_work_time})\n'
+        week_overtime = self.state_tracker_thread.week_overtime
+        days_work_seconds = self.state_tracker_thread.todays_work_seconds + week_overtime
+        days_work_time = seconds_to_human_readable(days_work_seconds)
+        target_work_seconds = StateTracker.todays_target()
+        ratio = days_work_seconds / target_work_seconds if target_work_seconds != 0 else 1
+        text = f'{int(100 * ratio)}% ({days_work_time})\n'
         states_to_print = ['email', 'leisure']
-        text += '\n'.join([f'- {state.capitalize():8} {seconds_to_human_readable(cum_times[state])}'
+        text += '\n'.join([f'{state.capitalize():8} {seconds_to_human_readable(cum_times[weekday, state])}'
                            for state in states_to_print])
         self.setText(text)
+
 
 if __name__ == '__main__':
     app = QApplication([])
