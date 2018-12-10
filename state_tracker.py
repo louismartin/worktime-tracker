@@ -140,7 +140,7 @@ class StateTracker:
     def this_weeks_work_seconds(self):
         current_weekday = StateTracker.get_timestamp_weekday(time.time())
         return sum([self.get_work_seconds_from_weekday(weekday)
-                    for weekday in range(current_weekday + 1)])
+                    for weekday in range(current_weekday)])
 
     @property
     def week_overtime(self):
