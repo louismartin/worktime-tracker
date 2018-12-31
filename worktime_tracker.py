@@ -201,9 +201,10 @@ class WorktimeTracker:
 
     def load_logs(self):
         # TODO: If the program was killed two hours ago on work state, then it will probably count two hours of work
-        if self.read_last_log() is None:
+        last_log = self.read_last_log()
+        if last_log is None or not WorktimeTracker.is_this_week(float(last_log[0])):
             self.write_log(time.time(), 'idle')
-        if self.read_last_log()[1] != 'idle':
+        if last_log[1] != 'idle':
             # Add a log pretending the computer was idle at the last time the state was checked
             self.write_log(self.read_last_check(), 'idle')
         self.logs = WorktimeTracker.get_this_weeks_logs()
