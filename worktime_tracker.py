@@ -72,7 +72,7 @@ def reverse_readline(filename, buf_size=8192):
             yield segment
 
 
-class StateTracker:
+class WorktimeTracker:
 
     states = ['work', 'email', 'leisure', 'idle']
     work_states = ['work', 'email']
@@ -98,14 +98,14 @@ class StateTracker:
     @staticmethod
     def todays_target():
         current_weekday = (datetime.today() - timedelta(hours=7)).weekday()
-        return StateTracker.targets[current_weekday]
+        return WorktimeTracker.targets[current_weekday]
 
     @staticmethod
     def is_today(timestamp):
         query_datetime = datetime.fromtimestamp(timestamp)
         current_datetime = datetime.today()
         assert query_datetime <= current_datetime
-        day_start = current_datetime.replace(hour=StateTracker.day_start_hour, minute=0)
+        day_start = current_datetime.replace(hour=WorktimeTracker.day_start_hour, minute=0)
         return query_datetime >= day_start
 
     @staticmethod
@@ -114,38 +114,38 @@ class StateTracker:
         current_datetime = datetime.today()
         assert query_datetime <= current_datetime
         week_start = (current_datetime + timedelta(days=-current_datetime.weekday()))
-        week_start = week_start.replace(hour=StateTracker.day_start_hour, minute=0)
+        week_start = week_start.replace(hour=WorktimeTracker.day_start_hour, minute=0)
         return query_datetime >= week_start
 
     @staticmethod
     def get_timestamp_weekday(timestamp):
         query_datetime = datetime.fromtimestamp(timestamp)
-        return (query_datetime + timedelta(hours=-StateTracker.day_start_hour)).weekday()
+        return (query_datetime + timedelta(hours=-WorktimeTracker.day_start_hour)).weekday()
 
     def update_cum_times(self, logs):
         for (start_timestamp, state), (end_timestamp, next_state) in zip(logs[:-1], logs[1:]):
             assert state != next_state
-            weekday = StateTracker.get_timestamp_weekday(start_timestamp)
+            weekday = WorktimeTracker.get_timestamp_weekday(start_timestamp)
             self.cum_times[weekday, state] += (end_timestamp - start_timestamp)
 
     def get_work_seconds_from_weekday(self, weekday):
-        return sum([self.cum_times[weekday, state] for state in StateTracker.work_states])
+        return sum([self.cum_times[weekday, state] for state in WorktimeTracker.work_states])
 
     @property
     def todays_work_seconds(self):
-        current_weekday = StateTracker.get_timestamp_weekday(time.time())
+        current_weekday = WorktimeTracker.get_timestamp_weekday(time.time())
         return self.get_work_seconds_from_weekday(current_weekday)
 
     @property
     def this_weeks_work_seconds(self):
-        current_weekday = StateTracker.get_timestamp_weekday(time.time())
+        current_weekday = WorktimeTracker.get_timestamp_weekday(time.time())
         return sum([self.get_work_seconds_from_weekday(weekday)
                     for weekday in range(current_weekday)])
 
     @property
     def week_overtime(self):
-        current_weekday = StateTracker.get_timestamp_weekday(time.time())
-        return self.this_weeks_work_seconds - sum([StateTracker.targets[weekday]
+        current_weekday = WorktimeTracker.get_timestamp_weekday(time.time())
+        return self.this_weeks_work_seconds - sum([WorktimeTracker.targets[weekday]
                                                    for weekday in range(current_weekday)])
 
     def write_log(self, timestamp, state):
@@ -177,14 +177,14 @@ class StateTracker:
         if last_log is None:
             return False
         timestamp, _ = last_log
-        return StateTracker.is_today(timestamp)
+        return WorktimeTracker.is_today(timestamp)
 
     @staticmethod
     def get_todays_logs():
         logs = []
-        for line in reverse_readline(StateTracker.logs_path):
+        for line in reverse_readline(WorktimeTracker.logs_path):
             timestamp, state = line.strip().split('\t')
-            if not StateTracker.is_today(float(timestamp)):
+            if not WorktimeTracker.is_today(float(timestamp)):
                 break
             logs.append((float(timestamp), state))
         return logs[::-1]  # We read the logs backward
@@ -192,9 +192,9 @@ class StateTracker:
     @staticmethod
     def get_this_weeks_logs():
         logs = []
-        for line in reverse_readline(StateTracker.logs_path):
+        for line in reverse_readline(WorktimeTracker.logs_path):
             timestamp, state = line.strip().split('\t')
-            if not StateTracker.is_this_week(float(timestamp)):
+            if not WorktimeTracker.is_this_week(float(timestamp)):
                 break
             logs.append((float(timestamp), state))
         return logs[::-1]  # We read the logs backward
@@ -206,7 +206,7 @@ class StateTracker:
         if self.read_last_log()[1] != 'idle':
             # Add a log pretending the computer was idle at the last time the state was checked
             self.write_log(self.read_last_check(), 'idle')
-        self.logs = StateTracker.get_this_weeks_logs()
+        self.logs = WorktimeTracker.get_this_weeks_logs()
         self.update_cum_times(self.logs)
 
     def update_state(self):
@@ -222,7 +222,7 @@ class StateTracker:
 
 
 if __name__ == '__main__':
-    state_tracker = StateTracker()
+    worktime_tracker = WorktimeTracker()
     while True:
-        state_tracker.update_state()
+        worktime_tracker.update_state()
         time.sleep(0.1)

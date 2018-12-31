@@ -3,11 +3,11 @@
 <plist version="1.0">
     <dict>
         <key>Label</key>
-        <string>com.louis.macstatetracker</string>
+        <string>com.louis.worktimetracker</string>
         <key>ProgramArguments</key>
         <array>
             <string>/Users/louismartin/miniconda3/bin/python3</string>
-            <string>/Users/louismartin/dev/mac-state-tracker/state_tracker_gui.py</string>
+            <string>/Users/louismartin/dev/worktime-tracker/worktime_tracker_gui.py</string>
         </array>
         <key>KeepAlive</key>
         <true/>

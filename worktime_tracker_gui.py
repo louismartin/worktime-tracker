@@ -4,7 +4,7 @@ import time
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, Qt
 from PyQt5.QtWidgets import QApplication, QLabel, QDesktopWidget
 
-from state_tracker import StateTracker
+from worktime_tracker import WorktimeTracker
 
 
 def seconds_to_human_readable(seconds):
@@ -15,7 +15,7 @@ def seconds_to_human_readable(seconds):
     return f'{sign}{d.hour}h{d.minute:02d}m'
 
 
-class StateTrackerThread(QThread, StateTracker):
+class WorktimeTrackerThread(QThread, WorktimeTracker):
 
     state_changed = pyqtSignal()
 
@@ -38,9 +38,9 @@ class Window(QLabel):
         self.setContentsMargins(5, 0, 0, 0)
         self.move_upper_right()
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
-        self.state_tracker_thread = StateTrackerThread()
-        self.state_tracker_thread.state_changed.connect(self.update_ui)
-        self.state_tracker_thread.start()
+        self.worktime_tracker_thread = WorktimeTrackerThread()
+        self.worktime_tracker_thread.state_changed.connect(self.update_ui)
+        self.worktime_tracker_thread.start()
         self.update_ui()
 
     def move_upper_right(self):
@@ -52,12 +52,12 @@ class Window(QLabel):
 
     @pyqtSlot()
     def update_ui(self):
-        weekday = StateTracker.get_timestamp_weekday(time.time())
-        cum_times = self.state_tracker_thread.cum_times
-        week_overtime = self.state_tracker_thread.week_overtime
-        days_work_seconds = self.state_tracker_thread.todays_work_seconds + week_overtime
+        weekday = WorktimeTracker.get_timestamp_weekday(time.time())
+        cum_times = self.worktime_tracker_thread.cum_times
+        week_overtime = self.worktime_tracker_thread.week_overtime
+        days_work_seconds = self.worktime_tracker_thread.todays_work_seconds + week_overtime
         days_work_time = seconds_to_human_readable(days_work_seconds)
-        target_work_seconds = StateTracker.todays_target()
+        target_work_seconds = WorktimeTracker.todays_target()
         ratio = days_work_seconds / target_work_seconds if target_work_seconds != 0 else 1
         text = f'{int(100 * ratio)}% ({days_work_time})\n'
         states_to_print = ['email', 'leisure']
