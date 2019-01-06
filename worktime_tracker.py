@@ -81,10 +81,11 @@ class WorktimeTracker:
         1: 6 * 3600,  # Tuesday
         2: 6 * 3600,  # Wednesday
         3: 6 * 3600,  # Thursday
-        4: 4 * 3600,  # Friday
+        4: 5 * 3600,  # Friday
         5: 0,  # Saturday
         6: 0,  # Sunday
     }
+    weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     day_start_hour = 7  # Hour at which the day starts
     logs_path = repo_dir / 'logs.tsv'
     last_check_path = repo_dir / 'last_check'
@@ -96,9 +97,12 @@ class WorktimeTracker:
         self.load_logs()
 
     @staticmethod
+    def current_weekday():
+        return (datetime.today() - timedelta(hours=7)).weekday()
+
+    @staticmethod
     def todays_target():
-        current_weekday = (datetime.today() - timedelta(hours=7)).weekday()
-        return WorktimeTracker.targets[current_weekday]
+        return WorktimeTracker.targets[WorktimeTracker.current_weekday()]
 
     @staticmethod
     def is_today(timestamp):
@@ -133,20 +137,17 @@ class WorktimeTracker:
 
     @property
     def todays_work_seconds(self):
-        current_weekday = WorktimeTracker.get_timestamp_weekday(time.time())
-        return self.get_work_seconds_from_weekday(current_weekday)
+        return self.get_work_seconds_from_weekday(WorktimeTracker.current_weekday())
 
     @property
     def this_weeks_work_seconds(self):
-        current_weekday = WorktimeTracker.get_timestamp_weekday(time.time())
         return sum([self.get_work_seconds_from_weekday(weekday)
-                    for weekday in range(current_weekday)])
+                    for weekday in range(WorktimeTracker.current_weekday())])
 
     @property
     def week_overtime(self):
-        current_weekday = WorktimeTracker.get_timestamp_weekday(time.time())
         return self.this_weeks_work_seconds - sum([WorktimeTracker.targets[weekday]
-                                                   for weekday in range(current_weekday)])
+                                                   for weekday in range(WorktimeTracker.current_weekday())])
 
     def write_log(self, timestamp, state):
         with self.logs_path.open('a') as f:
