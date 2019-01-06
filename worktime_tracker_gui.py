@@ -34,13 +34,10 @@ class Window(QLabel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setWindowTitle('State Tracker')
-        self.setGeometry(0, 0, 158, 45)
-        self.setContentsMargins(5, 5, 5, 5)
+        self.set_geometry(n_lines=2, max_characters=20)
         self.move_upper_right()
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
-        self.worktime_tracker_thread = WorktimeTrackerThread()
-        self.worktime_tracker_thread.state_changed.connect(self.update_ui)
-        self.worktime_tracker_thread.start()
+        self.start_thread()
         self.update_ui()
 
     def move_upper_right(self):
@@ -50,21 +47,30 @@ class Window(QLabel):
         y = 100
         self.move(x, y)
 
+    def set_geometry(self, n_lines, max_characters):
+        self.setGeometry(0, 0, 70 * n_lines + 20, 2 * max_characters + 5)
+        self.setContentsMargins(5, 5, 5, 5)
+
+    def start_thread(self):
+        self.worktime_tracker_thread = WorktimeTrackerThread()
+        self.worktime_tracker_thread.state_changed.connect(self.update_ui)
+        self.worktime_tracker_thread.start()
+
+    def lines(self):
+        day_work = self.worktime_tracker_thread.todays_work_seconds
+        week_overtime = self.worktime_tracker_thread.week_overtime
+        target = WorktimeTracker.todays_target()
+        day_ratio = day_work / target if target != 0 else 1
+        week_ratio = (day_work + week_overtime) / target if target != 0 else 1
+        lines = [
+            f'Day: {int(100 * day_ratio)}% ({seconds_to_human_readable(day_work)})',
+            f'Week: {int(100 * week_ratio)}% ({seconds_to_human_readable(day_work + week_overtime)})',
+        ]
+        return lines
+
     @pyqtSlot()
     def update_ui(self):
-        weekday = WorktimeTracker.get_timestamp_weekday(time.time())
-        cum_times = self.worktime_tracker_thread.cum_times
-        week_overtime = self.worktime_tracker_thread.week_overtime
-        day_work = self.worktime_tracker_thread.todays_work_seconds
-        target = WorktimeTracker.todays_target()
-        ratio = day_work / target if target != 0 else 1
-        text = f'Day: {int(100 * ratio)}% ({seconds_to_human_readable(day_work)})\n'
-        ratio = (day_work + week_overtime) / target if target != 0 else 1
-        text += f'Week: {int(100 * ratio)}% ({seconds_to_human_readable(day_work + week_overtime)})\n'
-        states_to_print = []  # ['email', 'leisure']
-        text += '\n'.join([f'{state.capitalize():8} {seconds_to_human_readable(cum_times[weekday, state])}'
-                           for state in states_to_print])
-        self.setText(text.strip('\n'))
+        self.setText('\n'.join(self.lines()))
 
 
 if __name__ == '__main__':
