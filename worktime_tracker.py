@@ -101,18 +101,6 @@ class WorktimeTracker:
         return (datetime.today() - timedelta(hours=7)).weekday()
 
     @staticmethod
-    def todays_target():
-        return WorktimeTracker.targets[WorktimeTracker.current_weekday()]
-
-    @staticmethod
-    def is_today(timestamp):
-        query_datetime = datetime.fromtimestamp(timestamp)
-        current_datetime = datetime.today()
-        assert query_datetime <= current_datetime
-        day_start = current_datetime.replace(hour=WorktimeTracker.day_start_hour, minute=0)
-        return query_datetime >= day_start
-
-    @staticmethod
     def is_this_week(timestamp):
         query_datetime = datetime.fromtimestamp(timestamp)
         current_datetime = datetime.today()
@@ -132,22 +120,8 @@ class WorktimeTracker:
             weekday = WorktimeTracker.get_timestamp_weekday(start_timestamp)
             self.cum_times[weekday, state] += (end_timestamp - start_timestamp)
 
-    def get_work_seconds_from_weekday(self, weekday):
+    def get_work_time_from_weekday(self, weekday):
         return sum([self.cum_times[weekday, state] for state in WorktimeTracker.work_states])
-
-    @property
-    def todays_work_seconds(self):
-        return self.get_work_seconds_from_weekday(WorktimeTracker.current_weekday())
-
-    @property
-    def this_weeks_work_seconds(self):
-        return sum([self.get_work_seconds_from_weekday(weekday)
-                    for weekday in range(WorktimeTracker.current_weekday())])
-
-    @property
-    def week_overtime(self):
-        return self.this_weeks_work_seconds - sum([WorktimeTracker.targets[weekday]
-                                                   for weekday in range(WorktimeTracker.current_weekday())])
 
     def write_log(self, timestamp, state):
         with self.logs_path.open('a') as f:
@@ -172,23 +146,6 @@ class WorktimeTracker:
             return None
         timestamp, state = last_line.strip().split('\t')
         return float(timestamp), state
-
-    def was_run_today(self):
-        last_log = self.read_last_log()
-        if last_log is None:
-            return False
-        timestamp, _ = last_log
-        return WorktimeTracker.is_today(timestamp)
-
-    @staticmethod
-    def get_todays_logs():
-        logs = []
-        for line in reverse_readline(WorktimeTracker.logs_path):
-            timestamp, state = line.strip().split('\t')
-            if not WorktimeTracker.is_today(float(timestamp)):
-                break
-            logs.append((float(timestamp), state))
-        return logs[::-1]  # We read the logs backward
 
     @staticmethod
     def get_this_weeks_logs():

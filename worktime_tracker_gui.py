@@ -58,7 +58,7 @@ class Window(QLabel):
     def lines(self):
         def weekday_text(weekday_idx):
             weekday = WorktimeTracker.weekdays[weekday_idx]
-            work_time = self.worktime_tracker_thread.get_work_seconds_from_weekday(weekday_idx)
+            work_time = self.worktime_tracker_thread.get_work_time_from_weekday(weekday_idx)
             target = WorktimeTracker.targets[weekday_idx]
             ratio = work_time / target if target != 0 else 1
             return f'{weekday[:3]}: {int(100 * ratio)}% ({seconds_to_human_readable(work_time)})'
