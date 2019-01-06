@@ -34,8 +34,8 @@ class Window(QLabel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setWindowTitle('State Tracker')
-        self.setGeometry(0, 0, 120, 55)
-        self.setContentsMargins(5, 0, 0, 0)
+        self.setGeometry(0, 0, 158, 45)
+        self.setContentsMargins(5, 5, 5, 5)
         self.move_upper_right()
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.worktime_tracker_thread = WorktimeTrackerThread()
@@ -55,18 +55,20 @@ class Window(QLabel):
         weekday = WorktimeTracker.get_timestamp_weekday(time.time())
         cum_times = self.worktime_tracker_thread.cum_times
         week_overtime = self.worktime_tracker_thread.week_overtime
-        days_work_seconds = self.worktime_tracker_thread.todays_work_seconds + week_overtime
-        days_work_time = seconds_to_human_readable(days_work_seconds)
-        target_work_seconds = WorktimeTracker.todays_target()
-        ratio = days_work_seconds / target_work_seconds if target_work_seconds != 0 else 1
-        text = f'{int(100 * ratio)}% ({days_work_time})\n'
-        states_to_print = ['email', 'leisure']
+        day_work = self.worktime_tracker_thread.todays_work_seconds
+        target = WorktimeTracker.todays_target()
+        ratio = day_work / target if target != 0 else 1
+        text = f'Day: {int(100 * ratio)}% ({seconds_to_human_readable(day_work)})\n'
+        ratio = (day_work + week_overtime) / target if target != 0 else 1
+        text += f'Week: {int(100 * ratio)}% ({seconds_to_human_readable(day_work + week_overtime)})\n'
+        states_to_print = []  # ['email', 'leisure']
         text += '\n'.join([f'{state.capitalize():8} {seconds_to_human_readable(cum_times[weekday, state])}'
                            for state in states_to_print])
-        self.setText(text)
+        self.setText(text.strip('\n'))
 
 
 if __name__ == '__main__':
+    # TODO: Use rumps instead https://github.com/jaredks/rumps (status bar)
     app = QApplication([])
     window = Window()
     window.show()
