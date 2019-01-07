@@ -133,6 +133,7 @@ class WorktimeTracker:
         return sum([self.cum_times[weekday, state] for state in WorktimeTracker.work_states])
 
     def write_log(self, timestamp, state):
+        # TODO: lock file
         with self.logs_path.open('a') as f:
             f.write(f'{timestamp}\t{state}\n')
 
