@@ -72,6 +72,14 @@ def reverse_readline(filename, buf_size=8192):
             yield segment
 
 
+def seconds_to_human_readable(seconds):
+    sign = (lambda x: ('', '-')[x < 0])(seconds)
+    seconds = int(abs(seconds))
+    sec = timedelta(seconds=seconds)
+    d = datetime(1, 1, 1) + sec
+    return f'{sign}{d.hour}h{d.minute:02d}m'
+
+
 class WorktimeTracker:
 
     states = ['work', 'email', 'leisure', 'idle']
@@ -121,6 +129,7 @@ class WorktimeTracker:
             self.cum_times[weekday, state] += (end_timestamp - start_timestamp)
 
     def get_work_time_from_weekday(self, weekday):
+        assert weekday in range(7)
         return sum([self.cum_times[weekday, state] for state in WorktimeTracker.work_states])
 
     def write_log(self, timestamp, state):
@@ -173,11 +182,20 @@ class WorktimeTracker:
         timestamp = time.time()
         self.write_last_check(timestamp)
         last_timestamp, last_state = self.logs[-1]
-        if state == last_state:
-            return
-        self.append_and_write_log(timestamp, state)
-        # Update cumulative times
-        self.update_cum_times([(last_timestamp, last_state), (timestamp, state)])
+        if state != last_state:
+            self.append_and_write_log(timestamp, state)
+            # Update cumulative times
+            self.update_cum_times([(last_timestamp, last_state), (timestamp, state)])
+
+    def lines(self):
+        def weekday_text(weekday_idx):
+            weekday = WorktimeTracker.weekdays[weekday_idx]
+            work_time = self.get_work_time_from_weekday(weekday_idx)
+            target = WorktimeTracker.targets[weekday_idx]
+            ratio = work_time / target if target != 0 else 1
+            return f'{weekday[:3]}: {int(100 * ratio)}% ({seconds_to_human_readable(work_time)})'
+
+        return [weekday_text(weekday_idx) for weekday_idx in range(WorktimeTracker.current_weekday() + 1)][::-1]
 
 
 if __name__ == '__main__':

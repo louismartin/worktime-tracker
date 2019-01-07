@@ -1,18 +1,9 @@
-from datetime import datetime, timedelta
 import time
 
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, Qt
 from PyQt5.QtWidgets import QApplication, QLabel, QDesktopWidget
 
 from worktime_tracker import WorktimeTracker
-
-
-def seconds_to_human_readable(seconds):
-    sign = (lambda x: ('', '-')[x < 0])(seconds)
-    seconds = int(abs(seconds))
-    sec = timedelta(seconds=seconds)
-    d = datetime(1, 1, 1) + sec
-    return f'{sign}{d.hour}h{d.minute:02d}m'
 
 
 class WorktimeTrackerThread(QThread, WorktimeTracker):
@@ -56,14 +47,7 @@ class Window(QLabel):
         self.worktime_tracker_thread.start()
 
     def lines(self):
-        def weekday_text(weekday_idx):
-            weekday = WorktimeTracker.weekdays[weekday_idx]
-            work_time = self.worktime_tracker_thread.get_work_time_from_weekday(weekday_idx)
-            target = WorktimeTracker.targets[weekday_idx]
-            ratio = work_time / target if target != 0 else 1
-            return f'{weekday[:3]}: {int(100 * ratio)}% ({seconds_to_human_readable(work_time)})'
-
-        return [weekday_text(weekday_idx) for weekday_idx in range(WorktimeTracker.current_weekday() + 1)][::-1]
+        return self.worktime_tracker_thread.lines()
 
     @pyqtSlot()
     def update_text(self):
