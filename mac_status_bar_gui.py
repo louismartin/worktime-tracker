@@ -17,7 +17,7 @@ class WorktimeTrackerStatusBarApp(rumps.App):
         lines = self.worktime_tracker.lines()
         # Update menu with new times
         self.menu.clear()
-        self.menu = lines[1:]
+        self.menu = lines[1:][::-1]  # Sort days in chronological order
         # Add quit button again
         quit_button = rumps.MenuItem('Quit')
         quit_button.set_callback(rumps.quit_application)
