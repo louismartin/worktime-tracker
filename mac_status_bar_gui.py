@@ -3,7 +3,6 @@ import rumps
 from worktime_tracker import WorktimeTracker, seconds_to_human_readable
 
 
-# TODO: make it update in real time
 class WorktimeTrackerStatusBarApp(rumps.App):
 
     def __init__(self, *args, **kwargs):
@@ -13,13 +12,17 @@ class WorktimeTrackerStatusBarApp(rumps.App):
 
     @rumps.timer(1)
     def refresh(self, _):
-        # TODO: update work time in real time instead of only when changing state
         self.worktime_tracker.check_state()
-        for i, line in enumerate(self.worktime_tracker.lines()):
-            self.menu[i] = rumps.MenuItem(line)
-        day_work = self.worktime_tracker.get_work_time_from_weekday(WorktimeTracker.current_weekday())
-        self.title = seconds_to_human_readable(day_work)
-
+        # Get lines to display
+        lines = self.worktime_tracker.lines()
+        # Update menu with new times
+        self.menu.clear()
+        self.menu = lines[1:]
+        # Add quit button again
+        quit_button = rumps.MenuItem('Quit')
+        quit_button.set_callback(rumps.quit_application)
+        self.menu.add(quit_button)
+        self.title = lines[0].split(': ')[1]
 
 if __name__ == '__main__':
     WorktimeTrackerStatusBarApp().run()
