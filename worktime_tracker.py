@@ -99,10 +99,19 @@ class WorktimeTracker:
     last_check_path = repo_dir / 'last_check'
 
     def __init__(self):
-        self.cum_times = defaultdict(int)
         self.logs_path.touch()  # Creates file if it does not exist
         self.logs = []
         self.load_logs()
+
+    @property
+    def cum_times(self):
+        cum_times = defaultdict(float)
+        logs = self.logs + [(time.time(), 'idle')]  # Add a virtual state at the end to count the last interval
+        for (start_timestamp, state), (end_timestamp, next_state) in zip(logs[:-1], logs[1:]):
+            assert state != next_state
+            weekday = WorktimeTracker.get_timestamp_weekday(start_timestamp)
+            cum_times[weekday, state] += (end_timestamp - start_timestamp)
+        return cum_times
 
     @staticmethod
     def current_weekday():
@@ -121,12 +130,6 @@ class WorktimeTracker:
     def get_timestamp_weekday(timestamp):
         query_datetime = datetime.fromtimestamp(timestamp)
         return (query_datetime + timedelta(hours=-WorktimeTracker.day_start_hour)).weekday()
-
-    def update_cum_times(self, logs):
-        for (start_timestamp, state), (end_timestamp, next_state) in zip(logs[:-1], logs[1:]):
-            assert state != next_state
-            weekday = WorktimeTracker.get_timestamp_weekday(start_timestamp)
-            self.cum_times[weekday, state] += (end_timestamp - start_timestamp)
 
     def get_work_time_from_weekday(self, weekday):
         assert weekday in range(7)
@@ -176,19 +179,20 @@ class WorktimeTracker:
             # Add a log pretending the computer was idle at the last time the state was checked
             self.write_log(self.read_last_check(), 'idle')
         self.logs = WorktimeTracker.get_this_weeks_logs()
-        self.update_cum_times(self.logs)
 
     def check_state(self):
+        '''Checks the current state and update the logs. Returns a boolean of whether the state changed or not'''
         state = get_state()
         timestamp = time.time()
         self.write_last_check(timestamp)
         last_timestamp, last_state = self.logs[-1]
         if state != last_state:
             self.append_and_write_log(timestamp, state)
-            # Update cumulative times
-            self.update_cum_times([(last_timestamp, last_state), (timestamp, state)])
+            return True
+        return False
 
     def lines(self):
+        '''Nicely formatted lines for displaying to the user'''
         def weekday_text(weekday_idx):
             weekday = WorktimeTracker.weekdays[weekday_idx]
             work_time = self.get_work_time_from_weekday(weekday_idx)

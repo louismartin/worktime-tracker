@@ -10,13 +10,11 @@ class WorktimeTrackerThread(QThread, WorktimeTracker):
 
     state_changed = pyqtSignal()
 
-    def update_cum_times(self, logs):
-        self.state_changed.emit()
-        super().update_cum_times(logs)
-
     def run(self):
         while True:
-            self.check_state()
+            state_changed = self.check_state()
+            if state_changed:
+               self.state_changed.emit()
             time.sleep(0.1)
 
 
