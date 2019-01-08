@@ -178,7 +178,7 @@ class WorktimeTracker:
         self.logs = WorktimeTracker.get_this_weeks_logs()
         self.update_cum_times(self.logs)
 
-    def update_state(self):
+    def check_state(self):
         state = get_state()
         timestamp = time.time()
         self.write_last_check(timestamp)
@@ -202,5 +202,5 @@ class WorktimeTracker:
 if __name__ == '__main__':
     worktime_tracker = WorktimeTracker()
     while True:
-        worktime_tracker.update_state()
+        worktime_tracker.check_state()
         time.sleep(0.1)

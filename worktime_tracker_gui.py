@@ -16,7 +16,7 @@ class WorktimeTrackerThread(QThread, WorktimeTracker):
 
     def run(self):
         while True:
-            self.update_state()
+            self.check_state()
             time.sleep(0.1)
 
 

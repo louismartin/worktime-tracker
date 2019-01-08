@@ -14,7 +14,7 @@ class WorktimeTrackerStatusBarApp(rumps.App):
     @rumps.timer(1)
     def refresh(self, _):
         # TODO: update work time in real time instead of only when changing state
-        self.worktime_tracker.update_state()
+        self.worktime_tracker.check_state()
         for i, line in enumerate(self.worktime_tracker.lines()):
             self.menu[i] = rumps.MenuItem(line)
         day_work = self.worktime_tracker.get_work_time_from_weekday(WorktimeTracker.current_weekday())
