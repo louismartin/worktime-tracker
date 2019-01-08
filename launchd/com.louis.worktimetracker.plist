@@ -7,7 +7,7 @@
         <key>ProgramArguments</key>
         <array>
             <string>/Users/louismartin/miniconda3/bin/python3</string>
-            <string>/Users/louismartin/dev/worktime-tracker/worktime_tracker_gui.py</string>
+            <string>/Users/louismartin/dev/worktime-tracker/mac_status_bar_gui.py</string>
         </array>
         <key>KeepAlive</key>
         <true/>
