@@ -14,12 +14,12 @@ repo_dir = Path(__file__).resolve().parent
 def get_desktop_number():
     script_path = repo_dir / 'get_desktop_wallpaper.scpt'
     process = subprocess.run(['osascript', str(script_path)], capture_output=True, check=True)
-    wallpaper = process.stdout.decode('utf-8').strip()
+    wallpaper_filename = process.stdout.decode('utf-8').strip()
     return {
         'Facebook_Backgrounds--node_facebook (1).png': 1,
         'Facebook_Backgrounds--friendsgc.png': 2,
         'Yosemite 5.jpg': 3,
-    }[wallpaper]
+    }[wallpaper_filename]
 
 
 def is_screen_locked():
@@ -98,7 +98,8 @@ class WorktimeTracker:
     logs_path = repo_dir / 'logs.tsv'
     last_check_path = repo_dir / 'last_check'
 
-    def __init__(self):
+    def __init__(self, read_only=False):
+        self.read_only = read_only
         self.logs_path.touch()  # Creates file if it does not exist
         self.logs = []
         self.load_logs()
@@ -106,7 +107,9 @@ class WorktimeTracker:
     @property
     def cum_times(self):
         cum_times = defaultdict(float)
-        logs = self.logs + [(time.time(), 'idle')]  # Add a virtual state at the end to count the last interval
+        logs = self.logs.copy()
+        if logs[-1][1] != 'idle':
+            logs += [(time.time(), 'idle')]  # Add a virtual state at the end to count the last interval
         for (start_timestamp, state), (end_timestamp, next_state) in zip(logs[:-1], logs[1:]):
             assert state != next_state
             weekday = WorktimeTracker.get_timestamp_weekday(start_timestamp)
@@ -137,7 +140,10 @@ class WorktimeTracker:
 
     def write_log(self, timestamp, state):
         # TODO: lock file
+        if self.read_only:
+            return
         with self.logs_path.open('a') as f:
+            # TODO: Check that newly written state is different from previous one
             f.write(f'{timestamp}\t{state}\n')
 
     def append_and_write_log(self, timestamp, state):
