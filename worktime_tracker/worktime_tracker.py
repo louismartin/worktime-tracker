@@ -1,18 +1,16 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 import os
-from pathlib import Path
 import subprocess
 import time
 
 import Quartz
 
-
-repo_dir = Path(__file__).resolve().parent.parent
+from worktime_tracker.utils import REPO_DIR, LOGS_PATH, LAST_CHECK_PATH
 
 
 def get_desktop_number():
-    script_path = repo_dir / 'get_desktop_wallpaper.scpt'
+    script_path = REPO_DIR / 'get_desktop_wallpaper.scpt'
     process = subprocess.run(['osascript', str(script_path)], capture_output=True, check=True)
     wallpaper_filename = process.stdout.decode('utf-8').strip()
     return {
@@ -95,12 +93,10 @@ class WorktimeTracker:
     }
     weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     day_start_hour = 7  # Hour at which the day starts
-    logs_path = repo_dir / 'logs.tsv'
-    last_check_path = repo_dir / 'last_check'
 
     def __init__(self, read_only=False):
         self.read_only = read_only
-        self.logs_path.touch()  # Creates file if it does not exist
+        LOGS_PATH.touch()  # Creates file if it does not exist
         self.logs = []
         self.load_logs()
 
@@ -142,7 +138,7 @@ class WorktimeTracker:
         # TODO: lock file
         if self.read_only:
             return
-        with self.logs_path.open('a') as f:
+        with LOGS_PATH.open('a') as f:
             # TODO: Check that newly written state is different from previous one
             f.write(f'{timestamp}\t{state}\n')
 
@@ -151,16 +147,16 @@ class WorktimeTracker:
         self.write_log(timestamp, state)
 
     def write_last_check(self, timestamp):
-        with self.last_check_path.open('w') as f:
+        with LAST_CHECK_PATH.open('w') as f:
             f.write(str(timestamp) + '\n')
 
     def read_last_check(self):
-        with self.last_check_path.open('r') as f:
+        with LAST_CHECK_PATH.open('r') as f:
             return float(f.readline().strip())
 
     def read_last_log(self):
         try:
-            last_line = next(reverse_readline(self.logs_path))
+            last_line = next(reverse_readline(LOGS_PATH))
         except StopIteration:
             return None
         timestamp, state = last_line.strip().split('\t')
@@ -169,7 +165,7 @@ class WorktimeTracker:
     @staticmethod
     def get_this_weeks_logs():
         logs = []
-        for line in reverse_readline(WorktimeTracker.logs_path):
+        for line in reverse_readline(LOGS_PATH):
             timestamp, state = line.strip().split('\t')
             if not WorktimeTracker.is_this_week(float(timestamp)):
                 break
