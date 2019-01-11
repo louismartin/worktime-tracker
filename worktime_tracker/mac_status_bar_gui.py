@@ -1,6 +1,6 @@
 import rumps
 
-from worktime_tracker import WorktimeTracker, seconds_to_human_readable
+from worktime_tracker.worktime_tracker import WorktimeTracker, seconds_to_human_readable
 
 
 class WorktimeTrackerStatusBarApp(rumps.App):

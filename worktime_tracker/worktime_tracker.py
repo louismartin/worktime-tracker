@@ -8,7 +8,7 @@ import time
 import Quartz
 
 
-repo_dir = Path(__file__).resolve().parent
+repo_dir = Path(__file__).resolve().parent.parent
 
 
 def get_desktop_number():

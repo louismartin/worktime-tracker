@@ -3,7 +3,7 @@ import time
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, Qt
 from PyQt5.QtWidgets import QApplication, QLabel, QDesktopWidget
 
-from worktime_tracker import WorktimeTracker
+from worktime_tracker.worktime_tracker import WorktimeTracker
 
 
 class WorktimeTrackerThread(QThread, WorktimeTracker):
