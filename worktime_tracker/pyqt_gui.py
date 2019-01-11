@@ -54,8 +54,7 @@ class Window(QLabel):
         self.set_geometry(n_lines=len(lines), max_characters=max([len(line) for line in lines]))
 
 
-if __name__ == '__main__':
-    # TODO: Use rumps instead https://github.com/jaredks/rumps (status bar)
+def start():
     app = QApplication([])
     window = Window()
     window.show()

@@ -27,3 +27,7 @@ class StatusBarApp(rumps.App):
         except Exception as e:
             self.title = 'ERROR'
             raise e
+
+
+def start():
+    StatusBarApp().run()

@@ -1,18 +1,29 @@
 import sys
 
 
+def start_macos_status_bar_app():
+    from worktime_tracker.macos.status_bar import start
+    start()
+
+
+def start_pyqt_gui():
+    from worktime_tracker.pyqt_gui import start
+    start()
+
+
 def macos_main():
-    from worktime_tracker.macos.status_bar import StatusBarApp
     print('Starting Worktime Tracker for macOS')
-    StatusBarApp().run()
+    start_macos_status_bar_app()
 
 
 def linux_main():
     raise NotImplementedError('Linux not supported yet')
+    start_pyqt_gui()  # TODO: There is no get_state() method yet
 
 
 def windows_main():
     raise NotImplementedError('Windows not supported yet')
+    start_pyqt_gui()  # TODO: There is no get_state() method yet
 
 
 if __name__ == '__main__':
