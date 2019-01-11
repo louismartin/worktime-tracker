@@ -1,40 +1,9 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 import os
-import subprocess
 import time
 
-import Quartz
-
-from worktime_tracker.utils import REPO_DIR, LOGS_PATH, LAST_CHECK_PATH
-
-
-def get_desktop_number():
-    script_path = REPO_DIR / 'get_desktop_wallpaper.scpt'
-    process = subprocess.run(['osascript', str(script_path)], capture_output=True, check=True)
-    wallpaper_filename = process.stdout.decode('utf-8').strip()
-    return {
-        'Facebook_Backgrounds--node_facebook (1).png': 1,
-        'Facebook_Backgrounds--friendsgc.png': 2,
-        'Yosemite 5.jpg': 3,
-    }[wallpaper_filename]
-
-
-def is_screen_locked():
-    return Quartz.CGSessionCopyCurrentDictionary().get('CGSSessionScreenIsLocked', 0) == 1
-
-
-def get_state():
-    desktop_number = get_desktop_number()
-    if is_screen_locked():
-        return 'idle'
-    if desktop_number == 1:
-        return 'work'
-    if desktop_number == 2:
-        return 'email'
-    if desktop_number == 3:
-        return 'leisure'
-    raise
+from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, get_state
 
 
 def reverse_readline(filename, buf_size=8192):
