@@ -12,7 +12,15 @@ Python >= 3.6
 
 Clone the repository, cd into it and install with:
 ```bash
-pip install -e .
+pip setup.py install
+```
+
+### macOS
+
+Activate and deactivate launchd with
+```bash
+launchctl load ~/Library/LaunchAgents/com.worktimetracker.worktimetracker.plist
+launchctl unload ~/Library/LaunchAgents/com.worktimetracker.worktimetracker.plist
 ```
 
 ### Running
