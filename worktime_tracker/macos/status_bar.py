@@ -1,9 +1,9 @@
 import rumps
 
-from worktime_tracker.worktime_tracker import WorktimeTracker, seconds_to_human_readable
+from worktime_tracker.worktime_tracker import WorktimeTracker
 
 
-class WorktimeTrackerStatusBarApp(rumps.App):
+class StatusBarApp(rumps.App):
 
     def __init__(self, *args, **kwargs):
         super().__init__(name='', *args, **kwargs)
@@ -27,6 +27,3 @@ class WorktimeTrackerStatusBarApp(rumps.App):
         except Exception as e:
             self.title = 'ERROR'
             raise e
-
-if __name__ == '__main__':
-    WorktimeTrackerStatusBarApp().run()

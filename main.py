@@ -2,9 +2,9 @@ import sys
 
 
 def macos_main():
-    from worktime_tracker.mac_status_bar_gui import WorktimeTrackerStatusBarApp
+    from worktime_tracker.macos.status_bar import StatusBarApp
     print('Starting Worktime Tracker for macOS')
-    WorktimeTrackerStatusBarApp().run()
+    StatusBarApp().run()
 
 
 def linux_main():
