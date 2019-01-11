@@ -14,7 +14,7 @@ class WorktimeTrackerThread(QThread, WorktimeTracker):
         while True:
             state_changed = self.check_state()
             if state_changed:
-               self.state_changed.emit()
+                self.state_changed.emit()
             time.sleep(0.1)
 
 
