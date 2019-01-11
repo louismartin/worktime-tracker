@@ -22,13 +22,36 @@ def write_log(timestamp, state):
         f.write(f'{timestamp}\t{state}\n')
 
 
+def parse_log_line(log_line):
+    timestamp, state = log_line.strip().split('\t')
+    return float(timestamp), state
+
+
 def read_last_log():
     try:
         last_line = next(reverse_read_line(LOGS_PATH))
+        return parse_log_line(last_line)
     except StopIteration:
         return None
-    timestamp, state = last_line.strip().split('\t')
-    return float(timestamp), state
+
+
+def rewrite_history(start_timestamp, end_timestamp, new_state):
+    # Careful, this methods rewrites the entire log file
+    with LOGS_PATH.open('r') as f:
+        logs = [parse_log_line(line) for line in f]
+    assert end_timestamp < logs[-1][0], 'Rewriting the future not allowed'
+    # Remove logs that are in the interval to be rewritten
+    logs_before = [(timestamp, state) for (timestamp, state) in logs
+                   if timestamp < start_timestamp]
+    logs_after = [(timestamp, state) for (timestamp, state) in logs
+                  if timestamp > end_timestamp]
+    if logs_after[0][1] == new_state:
+        # Remove first element if it is the same as the one we are going to introduce
+        logs_after = logs_after[1:]
+    new_logs = logs_before + [(start_timestamp, new_state)] + logs_after
+    with LOGS_PATH.open('w') as f:
+        for timestamp, state in new_logs:
+            f.write(f'{timestamp}\t{state}\n')
 
 
 class WorktimeTracker:
@@ -97,10 +120,10 @@ class WorktimeTracker:
     def get_this_weeks_logs():
         logs = []
         for line in reverse_read_line(LOGS_PATH):
-            timestamp, state = line.strip().split('\t')
-            if not WorktimeTracker.is_this_week(float(timestamp)):
+            timestamp, state = parse_log_line(line)
+            if not WorktimeTracker.is_this_week(timestamp):
                 break
-            logs.append((float(timestamp), state))
+            logs.append((timestamp, state))
         return logs[::-1]  # We read the logs backward
 
     def load_logs(self):
