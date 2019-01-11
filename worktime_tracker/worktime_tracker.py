@@ -5,6 +5,32 @@ import time
 from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, get_state, reverse_read_line, seconds_to_human_readable
 
 
+def write_last_check(timestamp):
+    with LAST_CHECK_PATH.open('w') as f:
+        f.write(str(timestamp) + '\n')
+
+
+def read_last_check():
+    with LAST_CHECK_PATH.open('r') as f:
+        return float(f.readline().strip())
+
+
+def write_log(timestamp, state):
+    # TODO: lock file
+    with LOGS_PATH.open('a') as f:
+        # TODO: Check that newly written state is different from previous one
+        f.write(f'{timestamp}\t{state}\n')
+
+
+def read_last_log():
+    try:
+        last_line = next(reverse_read_line(LOGS_PATH))
+    except StopIteration:
+        return None
+    timestamp, state = last_line.strip().split('\t')
+    return float(timestamp), state
+
+
 class WorktimeTracker:
 
     states = ['work', 'email', 'leisure', 'idle']
@@ -61,33 +87,11 @@ class WorktimeTracker:
         assert weekday in range(7)
         return sum([self.cum_times[weekday, state] for state in WorktimeTracker.work_states])
 
-    def write_log(self, timestamp, state):
-        # TODO: lock file
-        if self.read_only:
-            return
-        with LOGS_PATH.open('a') as f:
-            # TODO: Check that newly written state is different from previous one
-            f.write(f'{timestamp}\t{state}\n')
-
     def append_and_write_log(self, timestamp, state):
         self.logs.append((timestamp, state))
-        self.write_log(timestamp, state)
-
-    def write_last_check(self, timestamp):
-        with LAST_CHECK_PATH.open('w') as f:
-            f.write(str(timestamp) + '\n')
-
-    def read_last_check(self):
-        with LAST_CHECK_PATH.open('r') as f:
-            return float(f.readline().strip())
-
-    def read_last_log(self):
-        try:
-            last_line = next(reverse_read_line(LOGS_PATH))
-        except StopIteration:
-            return None
-        timestamp, state = last_line.strip().split('\t')
-        return float(timestamp), state
+        if self.read_only:
+            return
+        write_log(timestamp, state)
 
     @staticmethod
     def get_this_weeks_logs():
@@ -101,19 +105,21 @@ class WorktimeTracker:
 
     def load_logs(self):
         # TODO: If the program was killed two hours ago on work state, then it will probably count two hours of work
-        last_log = self.read_last_log()
+        last_log = read_last_log()
         if last_log is None or not WorktimeTracker.is_this_week(float(last_log[0])):
-            self.write_log(time.time(), 'idle')
+            if not self.read_only:
+                write_log(time.time(), 'idle')
         if last_log[1] != 'idle':
             # Add a log pretending the computer was idle at the last time the state was checked
-            self.write_log(self.read_last_check(), 'idle')
+            if not self.read_only:
+                write_log(read_last_check(), 'idle')
         self.logs = WorktimeTracker.get_this_weeks_logs()
 
     def check_state(self):
         '''Checks the current state and update the logs. Returns a boolean of whether the state changed or not'''
         state = get_state()
         timestamp = time.time()
-        self.write_last_check(timestamp)
+        write_last_check(timestamp)
         last_timestamp, last_state = self.logs[-1]
         if state != last_state:
             self.append_and_write_log(timestamp, state)
@@ -130,10 +136,3 @@ class WorktimeTracker:
             return f'{weekday[:3]}: {int(100 * ratio)}% ({seconds_to_human_readable(work_time)})'
 
         return [weekday_text(weekday_idx) for weekday_idx in range(WorktimeTracker.current_weekday() + 1)][::-1]
-
-
-if __name__ == '__main__':
-    worktime_tracker = WorktimeTracker()
-    while True:
-        worktime_tracker.check_state()
-        time.sleep(0.1)
