@@ -6,7 +6,7 @@ from worktime_tracker.utils import REPO_DIR
 
 
 def get_desktop_number():
-    script_path = REPO_DIR / 'get_desktop_wallpaper.scpt'
+    script_path = REPO_DIR / 'worktime_tracker/macos/get_desktop_wallpaper.scpt'
     process = subprocess.run(['osascript', str(script_path)], capture_output=True, check=True)
     wallpaper_filename = process.stdout.decode('utf-8').strip()
     return {
