@@ -95,12 +95,11 @@ class WorktimeTracker:
 
     @staticmethod
     def current_weekday():
-        return (datetime.today() - timedelta(hours=7)).weekday()
+        return (datetime.today() - timedelta(hours=WorktimeTracker.day_start_hour)).weekday()
 
     @staticmethod
     def get_week_start():
-        days_to_substract = (datetime.today() - timedelta(hours=WorktimeTracker.day_start_hour)).weekday()
-        delta = timedelta(days=days_to_substract, hours=WorktimeTracker.day_start_hour)
+        delta = timedelta(days=WorktimeTracker.current_weekday(), hours=WorktimeTracker.day_start_hour)
         return (datetime.today() - delta).replace(hour=WorktimeTracker.day_start_hour,
                                                   minute=0,
                                                   second=0,
