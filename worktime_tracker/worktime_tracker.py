@@ -45,10 +45,15 @@ def rewrite_history(start_timestamp, end_timestamp, new_state):
                    if timestamp < start_timestamp]
     logs_after = [(timestamp, state) for (timestamp, state) in logs
                   if timestamp > end_timestamp]
+    # Edge cases to not have two subsequent same states
+    if logs_before[-1][1] == new_state:
+        # Change the start date to the previous one if it is the same
+        start_timestamp = logs_before[-1][0]
+        logs_before = logs_before[:-1]
     if logs_after[0][1] == new_state:
         # Remove first element if it is the same as the one we are going to introduce
         logs_after = logs_after[1:]
-    new_logs = logs_before + [(start_timestamp, new_state)] + logs_after
+    new_logs = logs_before + [(f'{start_timestamp:.6f}', new_state)] + logs_after
     with LOGS_PATH.open('w') as f:
         for timestamp, state in new_logs:
             f.write(f'{timestamp}\t{state}\n')
@@ -83,7 +88,7 @@ class WorktimeTracker:
         if logs[-1][1] != 'idle':
             logs += [(time.time(), 'idle')]  # Add a virtual state at the end to count the last interval
         for (start_timestamp, state), (end_timestamp, next_state) in zip(logs[:-1], logs[1:]):
-            assert state != next_state
+            assert state != next_state, f'Same state: ({start_timestamp}, {state}) - ({end_timestamp}, {next_state})'
             weekday = WorktimeTracker.get_timestamp_weekday(start_timestamp)
             cum_times[weekday, state] += (end_timestamp - start_timestamp)
         return cum_times
@@ -93,13 +98,19 @@ class WorktimeTracker:
         return (datetime.today() - timedelta(hours=7)).weekday()
 
     @staticmethod
+    def get_week_start():
+        days_to_substract = (datetime.today() - timedelta(hours=WorktimeTracker.day_start_hour)).weekday()
+        delta = timedelta(days=days_to_substract, hours=WorktimeTracker.day_start_hour)
+        return (datetime.today() - delta).replace(hour=WorktimeTracker.day_start_hour,
+                                                  minute=0,
+                                                  second=0,
+                                                  microsecond=0)
+
+    @staticmethod
     def is_this_week(timestamp):
         query_datetime = datetime.fromtimestamp(timestamp)
-        current_datetime = datetime.today()
-        assert query_datetime <= current_datetime
-        week_start = (current_datetime + timedelta(days=-current_datetime.weekday()))
-        week_start = week_start.replace(hour=WorktimeTracker.day_start_hour, minute=0)
-        return query_datetime >= week_start
+        assert query_datetime <= datetime.today()
+        return query_datetime >= WorktimeTracker.get_week_start()
 
     @staticmethod
     def get_timestamp_weekday(timestamp):
