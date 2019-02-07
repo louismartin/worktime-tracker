@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
+import shutil
 import time
 
 from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, get_state, reverse_read_line, seconds_to_human_readable
@@ -27,6 +28,16 @@ def parse_log_line(log_line):
     return float(timestamp), state
 
 
+def read_logs(start_timestamp=0):
+    logs = []
+    for line in reverse_read_line(LOGS_PATH):
+        timestamp, state = parse_log_line(line)
+        if float(timestamp) < start_timestamp:
+            break
+        logs.append((float(timestamp), state))
+    return logs[::-1]  # We read the logs backward
+
+
 def read_last_log():
     try:
         last_line = next(reverse_read_line(LOGS_PATH))
@@ -37,8 +48,9 @@ def read_last_log():
 
 def rewrite_history(start_timestamp, end_timestamp, new_state):
     # Careful, this methods rewrites the entire log file
+    shutil.copy(LOGS_PATH, f'{LOGS_PATH}.bck{int(time.time())}')
     with LOGS_PATH.open('r') as f:
-        logs = [parse_log_line(line) for line in f]
+        logs = read_logs() + [(time.time(), 'idle')]
     assert end_timestamp < logs[-1][0], 'Rewriting the future not allowed'
     # Remove logs that are in the interval to be rewritten
     logs_before = [(timestamp, state) for (timestamp, state) in logs
@@ -103,13 +115,12 @@ class WorktimeTracker:
         return (datetime.today() - delta).replace(hour=WorktimeTracker.day_start_hour,
                                                   minute=0,
                                                   second=0,
-                                                  microsecond=0)
+                                                  microsecond=0).timestamp()
 
     @staticmethod
-    def is_this_week(timestamp):
-        query_datetime = datetime.fromtimestamp(timestamp)
-        assert query_datetime <= datetime.today()
-        return query_datetime >= WorktimeTracker.get_week_start()
+    def is_this_week(query_timestamp):
+        assert query_timestamp <= time.time()
+        return query_timestamp >= WorktimeTracker.get_week_start()
 
     @staticmethod
     def get_timestamp_weekday(timestamp):
@@ -128,13 +139,7 @@ class WorktimeTracker:
 
     @staticmethod
     def get_this_weeks_logs():
-        logs = []
-        for line in reverse_read_line(LOGS_PATH):
-            timestamp, state = parse_log_line(line)
-            if not WorktimeTracker.is_this_week(timestamp):
-                break
-            logs.append((timestamp, state))
-        return logs[::-1]  # We read the logs backward
+        return read_logs(start_timestamp=WorktimeTracker.get_week_start())
 
     def load_logs(self):
         # TODO: If the program was killed two hours ago on work state, then it will probably count two hours of work
