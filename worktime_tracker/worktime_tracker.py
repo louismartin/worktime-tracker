@@ -173,4 +173,13 @@ class WorktimeTracker:
             ratio = work_time / target if target != 0 else 1
             return f'{weekday[:3]}: {int(100 * ratio)}% ({seconds_to_human_readable(work_time)})'
 
-        return [weekday_text(weekday_idx) for weekday_idx in range(WorktimeTracker.current_weekday() + 1)][::-1]
+        def total_worktime_text():
+            work_time = sum([self.get_work_time_from_weekday(weekday_idx)
+                             for weekday_idx in range(WorktimeTracker.current_weekday())])
+            target = sum([WorktimeTracker.targets[weekday_idx]
+                          for weekday_idx in range(WorktimeTracker.current_weekday())])
+            return f'Week overtime: {seconds_to_human_readable(work_time - target)}'
+
+        lines = [weekday_text(weekday_idx) for weekday_idx in range(WorktimeTracker.current_weekday() + 1)][::-1]
+        lines += [total_worktime_text()]
+        return lines
