@@ -50,16 +50,22 @@ def rewrite_history(start_timestamp, end_timestamp, new_state):
     # Careful, this methods rewrites the entire log file
     shutil.copy(LOGS_PATH, f'{LOGS_PATH}.bck{int(time.time())}')
     with LOGS_PATH.open('r') as f:
-        logs = read_logs() + [(time.time(), 'idle')]
+        logs = read_logs() + [(time.time(), 'idle')]  # TODO: We should check that last timestamp is not idle already
     assert end_timestamp < logs[-1][0], 'Rewriting the future not allowed'
     # Remove logs that are in the interval to be rewritten
     logs_before = [(timestamp, state) for (timestamp, state) in logs
                    if timestamp < start_timestamp]
     logs_after = [(timestamp, state) for (timestamp, state) in logs
                   if timestamp > end_timestamp]
-    # Edge cases to not have two subsequent same states
+    logs_inside = [(timestamp, state) for (timestamp, state) in logs
+                   if start_timestamp <= timestamp and timestamp <= end_timestamp]
+    if len(logs_inside) > 0:
+        # Push back last log inside to be the first of logs after (the rewritten history needs to end on the same
+        # state as it was actually recorded)
+        logs_after = [(f'{end_timestamp:.6f}', logs_inside[-1][1])] + logs_after
+    # Edge cases to not have two identical subsequent states
     if logs_before[-1][1] == new_state:
-        # Change the start date to the previous one if it is the same
+        # Change the start date to the previous one if it is the same state
         start_timestamp = logs_before[-1][0]
         logs_before = logs_before[:-1]
     if logs_after[0][1] == new_state:
