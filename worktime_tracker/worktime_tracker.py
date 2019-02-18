@@ -82,11 +82,11 @@ class WorktimeTracker:
     states = ['work', 'email', 'leisure', 'idle']
     work_states = ['work', 'email']
     targets = {
-        0: 6 * 3600,  # Monday
-        1: 6 * 3600,  # Tuesday
-        2: 6 * 3600,  # Wednesday
-        3: 6 * 3600,  # Thursday
-        4: 5 * 3600,  # Friday
+        0: 7 * 3600,  # Monday
+        1: 7 * 3600,  # Tuesday
+        2: 7 * 3600,  # Wednesday
+        3: 7 * 3600,  # Thursday
+        4: 6 * 3600,  # Friday
         5: 0,  # Saturday
         6: 0,  # Sunday
     }
