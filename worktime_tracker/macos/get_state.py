@@ -6,14 +6,14 @@ from worktime_tracker.utils import REPO_DIR
 
 
 def get_desktop_number():
-    script_path = REPO_DIR / 'worktime_tracker/macos/get_desktop_wallpaper.scpt'
-    process = subprocess.run(['osascript', str(script_path)], capture_output=True, check=True)
+    script_path = REPO_DIR / 'worktime_tracker/macos/get_desktop_wallpaper.applescript'
+    process = subprocess.run(['/usr/bin/osascript', str(script_path)], capture_output=True, check=False)
     wallpaper_filename = process.stdout.decode('utf-8').strip()
     return {
         # Change to your wallpaper filenames
         'Facebook_Backgrounds--node_facebook (1).png': 1,
         'Facebook_Backgrounds--friendsgc.png': 2,
-        'Yosemite 5.jpg': 3,
+        'DefaultDesktop.heic': 3,
     }[wallpaper_filename]
 
 
