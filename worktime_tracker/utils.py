@@ -5,8 +5,10 @@ import sys
 
 
 REPO_DIR = Path(__file__).resolve().parent.parent
-LOGS_PATH = REPO_DIR / 'logs.tsv'
+LOGS_PATH = REPO_DIR / '.logs/logs.tsv'
 LAST_CHECK_PATH = REPO_DIR / 'last_check'
+
+LOGS_PATH.parent.mkdir(exist_ok=True)
 
 
 def get_state():
