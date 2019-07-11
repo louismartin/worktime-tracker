@@ -114,11 +114,12 @@ class WorktimeTracker:
     def get_work_ratio_since_timestamp(self, start_timestamp):
         end_timestamp = time.time()
         assert start_timestamp < end_timestamp
-        logs = self.logs.copy()[::-1]  # We read the logs backward
+        logs = self.logs.copy()
         if logs[-1][1] != 'idle':
             logs += [(end_timestamp, 'idle')]  # Add a virtual state at the end to count the last interval
         work_time = 0
-        for (state_start, state), (state_end, next_state) in zip(logs[1:], logs[:-1]):
+        for (state_end, next_state), (state_start, state) in zip(logs[::-1][:-1], logs[::-1][1:]):
+            assert state_end >= state_start, f'state_end < state_start: {state_end} < {state_start}'
             assert state != next_state, f'Same state: ({start_timestamp}, {state}) - ({end_timestamp}, {next_state})'
             if state_end < start_timestamp:
                 break
