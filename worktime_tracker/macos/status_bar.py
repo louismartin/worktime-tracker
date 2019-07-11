@@ -1,6 +1,9 @@
+import time
+
 import rumps
 
 from worktime_tracker.worktime_tracker import WorktimeTracker
+from worktime_tracker.utils import seconds_to_human_readable
 
 
 class StatusBarApp(rumps.App):
@@ -23,7 +26,9 @@ class StatusBarApp(rumps.App):
             quit_button = rumps.MenuItem('Quit')
             quit_button.set_callback(rumps.quit_application)
             self.menu.add(quit_button)
-            self.title = lines[0].split(': ')[1]
+            work_ratio_last_period = self.worktime_tracker.get_work_ratio_since_timestamp(time.time() - 3600/2)
+            work_time_today = self.worktime_tracker.get_work_time_from_weekday(self.worktime_tracker.current_weekday())
+            self.title = f'{int(100 * work_ratio_last_period)}% - {seconds_to_human_readable(work_time_today)}'
         except Exception as e:
             self.title = 'ERROR'
             raise e

@@ -111,6 +111,22 @@ class WorktimeTracker:
             cum_times[weekday, state] += (end_timestamp - start_timestamp)
         return cum_times
 
+    def get_work_ratio_since_timestamp(self, start_timestamp):
+        end_timestamp = time.time()
+        assert start_timestamp < end_timestamp
+        logs = self.logs.copy()[::-1]  # We read the logs backward
+        if logs[-1][1] != 'idle':
+            logs += [(end_timestamp, 'idle')]  # Add a virtual state at the end to count the last interval
+        work_time = 0
+        for (state_start, state), (state_end, next_state) in zip(logs[1:], logs[:-1]):
+            assert state != next_state, f'Same state: ({start_timestamp}, {state}) - ({end_timestamp}, {next_state})'
+            if state_end < start_timestamp:
+                break
+            if state not in WorktimeTracker.work_states:
+                continue
+            work_time += state_end - max(state_start, start_timestamp)
+        return work_time / (end_timestamp - start_timestamp)
+
     @staticmethod
     def current_weekday():
         return (datetime.today() - timedelta(hours=WorktimeTracker.day_start_hour)).weekday()
