@@ -99,6 +99,14 @@ class WorktimeTracker:
         self.logs = []
         self.load_logs()
 
+    @staticmethod
+    def is_work_state(state):
+        return state in WorktimeTracker.work_states
+
+    @property
+    def current_state(self):
+        return self.logs[-1][1]
+
     @property
     def cum_times(self):
         cum_times = defaultdict(float)
@@ -123,7 +131,7 @@ class WorktimeTracker:
             assert state != next_state, f'Same state: ({start_timestamp}, {state}) - ({end_timestamp}, {next_state})'
             if state_end < start_timestamp:
                 break
-            if state not in WorktimeTracker.work_states:
+            if not self.is_work_state(state):
                 continue
             work_time += state_end - max(state_start, start_timestamp)
         return work_time / (end_timestamp - start_timestamp)
