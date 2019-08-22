@@ -6,15 +6,19 @@ from worktime_tracker.worktime_tracker import WorktimeTracker
 from worktime_tracker.utils import seconds_to_human_readable
 
 
+NO_ALERT_UNTIL = time.time()
 
 
 def maybe_send_alert(work_ratio, is_work_state):
-    if 0.1 < work_ratio and work_ratio < 0.85 and not is_work_state:
+    global NO_ALERT_UNTIL
+    if time.time() < NO_ALERT_UNTIL:
+        return
+    if 0.1 < work_ratio and work_ratio < 0.80 and not is_work_state:
         rumps.notification('Go back to work!', '', f'Your work ratio is {int(work_ratio*100)}%')
-        TIME_SINCE_LAST_ALERT = time.time()
-    if work_ratio > 0.85 and is_work_state:
+        NO_ALERT_UNTIL = time.time() + 5 * 60
+    if work_ratio > 0.95 and is_work_state:
         rumps.notification('Good job!', '', '')
-        TIME_SINCE_LAST_ALERT = time.time()
+        NO_ALERT_UNTIL = time.time() + 10 * 60
 
 
 class StatusBarApp(rumps.App):
