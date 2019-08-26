@@ -1,5 +1,7 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
+from functools import lru_cache
+from pathlib import Path
 import shutil
 import time
 
@@ -16,10 +18,12 @@ def read_last_check():
         return float(f.readline().strip())
 
 
-def write_log(timestamp, state):
+def maybe_write_log(timestamp, state):
     # TODO: lock file
+    _, last_state = read_last_log()
+    if last_state == state:
+        return
     with LOGS_PATH.open('a') as f:
-        # TODO: Check that newly written state is different from previous one
         f.write(f'{timestamp}\t{state}\n')
 
 
@@ -28,14 +32,20 @@ def parse_log_line(log_line):
     return float(timestamp), state
 
 
-def read_logs(start_timestamp=0):
+@lru_cache()
+def get_logs(start_timestamp=0, offset=0):
+    '''offset=1 will return 1 more log before the start_timestamp'''
+    LOGS_PATH.touch()  # Creates file if it does not exist
     logs = []
     for line in reverse_read_line(LOGS_PATH):
         timestamp, state = parse_log_line(line)
         if float(timestamp) < start_timestamp:
-            break
+            if offset <= 0:
+                break
+            else:
+                offset -= 1
         logs.append((float(timestamp), state))
-    return logs[::-1]  # We read the logs backward
+    return logs[::-1]  # Order the list back to original because we have read the logs backward
 
 
 def read_last_log():
@@ -50,7 +60,7 @@ def rewrite_history(start_timestamp, end_timestamp, new_state):
     # Careful, this methods rewrites the entire log file
     shutil.copy(LOGS_PATH, f'{LOGS_PATH}.bck{int(time.time())}')
     with LOGS_PATH.open('r') as f:
-        logs = read_logs() + [(time.time(), 'idle')]  # TODO: We should check that last timestamp is not idle already
+        logs = get_logs() + [(time.time(), 'idle')]  # TODO: We should check that last timestamp is not idle already
     assert end_timestamp < logs[-1][0], 'Rewriting the future not allowed'
     # Remove logs that are in the interval to be rewritten
     logs_before = [(timestamp, state) for (timestamp, state) in logs
@@ -95,9 +105,6 @@ class WorktimeTracker:
 
     def __init__(self, read_only=False):
         self.read_only = read_only
-        LOGS_PATH.touch()  # Creates file if it does not exist
-        self.logs = []
-        self.load_logs()
 
     @staticmethod
     def is_work_state(state):
@@ -105,40 +112,28 @@ class WorktimeTracker:
 
     @property
     def current_state(self):
-        return self.logs[-1][1]
-
-    @property
-    def cum_times(self):
-        cum_times = defaultdict(float)
-        logs = self.logs.copy()
-        if logs[-1][1] != 'idle':
-            logs += [(time.time(), 'idle')]  # Add a virtual state at the end to count the last interval
-        for (start_timestamp, state), (end_timestamp, next_state) in zip(logs[:-1], logs[1:]):
-            assert state != next_state, f'Same state: ({start_timestamp}, {state}) - ({end_timestamp}, {next_state})'
-            weekday = WorktimeTracker.get_timestamp_weekday(start_timestamp)
-            cum_times[weekday, state] += (end_timestamp - start_timestamp)
-        return cum_times
+        return read_last_log()[1]
 
     def get_work_ratio_since_timestamp(self, start_timestamp):
         end_timestamp = time.time()
-        assert start_timestamp < end_timestamp
-        logs = self.logs.copy()
-        if logs[-1][1] != 'idle':
-            logs += [(end_timestamp, 'idle')]  # Add a virtual state at the end to count the last interval
-        work_time = 0
-        for (state_end, next_state), (state_start, state) in zip(logs[::-1][:-1], logs[::-1][1:]):
-            assert state_end >= state_start, f'state_end < state_start: {state_end} < {state_start}'
-            assert state != next_state, f'Same state: ({start_timestamp}, {state}) - ({end_timestamp}, {next_state})'
-            if state_end < start_timestamp:
-                break
-            if not self.is_work_state(state):
-                continue
-            work_time += state_end - max(state_start, start_timestamp)
+        cum_times = get_cum_times_per_state(start_timestamp, end_timestamp)
+        work_time = sum([cum_times[state] for state in WorktimeTracker.work_states])
         return work_time / (end_timestamp - start_timestamp)
 
     @staticmethod
     def current_weekday():
         return (datetime.today() - timedelta(hours=WorktimeTracker.day_start_hour)).weekday()
+
+    @staticmethod
+    def get_current_day_start():
+        return datetime.today().replace(hour=WorktimeTracker.day_start_hour,
+                                        minute=0,
+                                        second=0,
+                                        microsecond=0).timestamp()
+
+    @staticmethod
+    def get_current_day_end():
+        return WorktimeTracker.get_current_day_start() + timedelta(days=1).total_seconds()
 
     @staticmethod
     def get_week_start():
@@ -158,42 +153,34 @@ class WorktimeTracker:
         query_datetime = datetime.fromtimestamp(timestamp)
         return (query_datetime + timedelta(hours=-WorktimeTracker.day_start_hour)).weekday()
 
-    def get_work_time_from_weekday(self, weekday):
-        assert weekday in range(7)
-        return sum([self.cum_times[weekday, state] for state in WorktimeTracker.work_states])
-
-    def append_and_write_log(self, timestamp, state):
-        self.logs.append((timestamp, state))
-        if self.read_only:
-            return
-        write_log(timestamp, state)
-
     @staticmethod
-    def get_this_weeks_logs():
-        return read_logs(start_timestamp=WorktimeTracker.get_week_start())
+    def get_weekday_timestamps(weekday):
+        current_weekday = datetime.now().weekday()
+        assert weekday <= current_weekday, 'Cannot query future weekday'
+        day_offset = current_weekday - weekday
+        weekday_start = WorktimeTracker.get_current_day_start() - timedelta(days=day_offset).total_seconds()
+        weekday_end = WorktimeTracker.get_current_day_end() - timedelta(days=day_offset).total_seconds()
+        return weekday_start, weekday_end
 
-    def load_logs(self):
-        # TODO: If the program was killed two hours ago on work state, then it will probably count two hours of work
-        last_log = read_last_log()
-        if last_log is None or not WorktimeTracker.is_this_week(float(last_log[0])):
-            if not self.read_only:
-                write_log(time.time(), 'idle')
-        if last_log[1] != 'idle':
-            # Add a log pretending the computer was idle at the last time the state was checked
-            if not self.read_only:
-                write_log(read_last_check(), 'idle')
-        self.logs = WorktimeTracker.get_this_weeks_logs()
+    def get_work_time_from_weekday(self, weekday):
+        weekday_start, weekday_end = WorktimeTracker.get_weekday_timestamps(weekday)
+        cum_times = get_cum_times_per_state(weekday_start, weekday_end)
+        return sum([cum_times[state] for state in WorktimeTracker.work_states])
+
+    def maybe_append_and_write_log(self, timestamp, state):
+        if self.read_only:
+            False
+        maybe_write_log(timestamp, state)
 
     def check_state(self):
         '''Checks the current state and update the logs. Returns a boolean of whether the state changed or not'''
+        # TODO: We should split the writing logic and the state checking logic
+        _, last_state = read_last_log()
         state = get_state()
         timestamp = time.time()
         write_last_check(timestamp)
-        last_timestamp, last_state = self.logs[-1]
-        if state != last_state:
-            self.append_and_write_log(timestamp, state)
-            return True
-        return False
+        self.maybe_append_and_write_log(timestamp, state)
+        return state != last_state
 
     def lines(self):
         '''Nicely formatted lines for displaying to the user'''
