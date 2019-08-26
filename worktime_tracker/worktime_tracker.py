@@ -1,7 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 from functools import lru_cache
-from pathlib import Path
 import shutil
 import time
 
@@ -33,18 +32,18 @@ def parse_log_line(log_line):
 
 
 @lru_cache()
-def get_logs(start_timestamp=0, offset=0):
-    '''offset=1 will return 1 more log before the start_timestamp'''
+def get_logs(start_timestamp, end_timestamp):
     LOGS_PATH.touch()  # Creates file if it does not exist
-    logs = []
-    for line in reverse_read_line(LOGS_PATH):
+    logs = [(end_timestamp, 'idle')]  # Add a virtual state at the end of the logs to count the last state
+    reverse_line_generator = reverse_read_line(LOGS_PATH)
+    for line in reverse_line_generator:
         timestamp, state = parse_log_line(line)
-        if float(timestamp) < start_timestamp:
-            if offset <= 0:
-                break
-            else:
-                offset -= 1
-        logs.append((float(timestamp), state))
+        if timestamp > end_timestamp:
+            continue
+        if timestamp < start_timestamp:
+            logs.append((start_timestamp, state))  # The first log will be dated at the start timestamp queried
+            break
+        logs.append((timestamp, state))
     return logs[::-1]  # Order the list back to original because we have read the logs backward
 
 
@@ -60,7 +59,7 @@ def rewrite_history(start_timestamp, end_timestamp, new_state):
     # Careful, this methods rewrites the entire log file
     shutil.copy(LOGS_PATH, f'{LOGS_PATH}.bck{int(time.time())}')
     with LOGS_PATH.open('r') as f:
-        logs = get_logs() + [(time.time(), 'idle')]  # TODO: We should check that last timestamp is not idle already
+        logs = get_logs(start_timestamp=0, end_timestamp=time.time())
     assert end_timestamp < logs[-1][0], 'Rewriting the future not allowed'
     # Remove logs that are in the interval to be rewritten
     logs_before = [(timestamp, state) for (timestamp, state) in logs
@@ -73,6 +72,9 @@ def rewrite_history(start_timestamp, end_timestamp, new_state):
         # Push back last log inside to be the first of logs after (the rewritten history needs to end on the same
         # state as it was actually recorded)
         logs_after = [(f'{end_timestamp:.6f}', logs_inside[-1][1])] + logs_after
+    else:
+        # If there were no states inside, then just take the first log after
+        logs_after = [(f'{end_timestamp:.6f}', logs_after[0][1])] + logs_after
     # Edge cases to not have two identical subsequent states
     if logs_before[-1][1] == new_state:
         # Change the start date to the previous one if it is the same state
@@ -89,7 +91,7 @@ def rewrite_history(start_timestamp, end_timestamp, new_state):
 
 def get_cum_times_per_state(start_timestamp, end_timestamp):
     assert start_timestamp < end_timestamp
-    logs = get_logs(start_timestamp, offset=1)  # The first log will probably be before start timestamp
+    logs = get_logs(start_timestamp, end_timestamp)
     cum_times_per_state = defaultdict(float)
     current_state_start_timestamp, current_state = logs[0]
     for new_timestamp, new_state in logs[1:]:
