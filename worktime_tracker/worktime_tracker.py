@@ -87,6 +87,20 @@ def rewrite_history(start_timestamp, end_timestamp, new_state):
             f.write(f'{timestamp}\t{state}\n')
 
 
+def get_cum_times_per_state(start_timestamp, end_timestamp):
+    assert start_timestamp < end_timestamp
+    logs = get_logs(start_timestamp, offset=1)  # The first log will probably be before start timestamp
+    cum_times_per_state = defaultdict(float)
+    current_state_start_timestamp, current_state = logs[0]
+    for new_timestamp, new_state in logs[1:]:
+        if new_state == current_state:
+            continue
+        cum_times_per_state[current_state] += (new_timestamp - max(current_state_start_timestamp, start_timestamp))
+        current_state = new_state
+        current_state_start_timestamp = new_timestamp
+    return cum_times_per_state
+
+
 class WorktimeTracker:
 
     states = ['work', 'email', 'leisure', 'idle']
