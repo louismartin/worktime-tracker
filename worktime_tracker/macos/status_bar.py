@@ -42,7 +42,7 @@ class StatusBarApp(rumps.App):
             quit_button.set_callback(rumps.quit_application)
             self.menu.add(quit_button)
             work_ratio_last_period = self.worktime_tracker.get_work_ratio_since_timestamp(time.time() - 3600/2)
-            work_time_today = self.worktime_tracker.get_work_time_from_weekday(self.worktime_tracker.current_weekday())
+            work_time_today = self.worktime_tracker.get_work_time_from_weekday(self.worktime_tracker.get_current_weekday())
             self.title = f'{int(100 * work_ratio_last_period)}% - {seconds_to_human_readable(work_time_today)}'
             maybe_send_alert(
                     work_ratio_last_period,
@@ -50,6 +50,7 @@ class StatusBarApp(rumps.App):
                     )
         except Exception as e:
             self.title = 'ERROR'
+            print(e)
             raise e
 
 
