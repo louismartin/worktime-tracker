@@ -53,6 +53,7 @@ def reverse_read_line(filename, buf_size=8192):
 
 
 def seconds_to_human_readable(seconds):
+    assert seconds < 3600 * 24, 'More than one day not supported'
     sign = (lambda x: ('', '-')[x < 0])(seconds)
     seconds = int(abs(seconds))
     sec = timedelta(seconds=seconds)
