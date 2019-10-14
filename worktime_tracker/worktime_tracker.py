@@ -102,6 +102,11 @@ def get_cum_times_per_state(start_timestamp, end_timestamp):
     return cum_times_per_state
 
 
+def get_work_time(start_timestamp, end_timestamp):
+    cum_times = get_cum_times_per_state(start_timestamp, end_timestamp)
+    return sum(cum_times[state] for state in WorktimeTracker.work_states)
+
+
 class WorktimeTracker:
 
     states = ['work', 'email', 'leisure', 'idle']
@@ -131,8 +136,7 @@ class WorktimeTracker:
 
     def get_work_ratio_since_timestamp(self, start_timestamp):
         end_timestamp = time.time()
-        cum_times = get_cum_times_per_state(start_timestamp, end_timestamp)
-        work_time = sum([cum_times[state] for state in WorktimeTracker.work_states])
+        work_time = get_work_time(start_timestamp, end_timestamp)
         return work_time / (end_timestamp - start_timestamp)
 
     @staticmethod
@@ -181,8 +185,7 @@ class WorktimeTracker:
 
     def get_work_time_from_weekday(self, weekday):
         weekday_start, weekday_end = WorktimeTracker.get_weekday_timestamps(weekday)
-        cum_times = get_cum_times_per_state(weekday_start, weekday_end)
-        return sum([cum_times[state] for state in WorktimeTracker.work_states])
+        return get_work_time(weekday_start, weekday_end)
 
     def maybe_append_and_write_log(self, timestamp, state):
         if self.read_only:
