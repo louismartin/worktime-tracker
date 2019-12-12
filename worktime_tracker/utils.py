@@ -1,22 +1,13 @@
 from datetime import datetime, timedelta
 import os
 from pathlib import Path
-import sys
 
 
 REPO_DIR = Path(__file__).resolve().parent.parent
 LOGS_PATH = REPO_DIR / '.logs/logs.tsv'
-LAST_CHECK_PATH = REPO_DIR / 'last_check'
-
+LAST_CHECK_PATH = REPO_DIR / 'last_check.txt'
+SPACE_TYPES_PATH = REPO_DIR / 'spaces_types.json'
 LOGS_PATH.parent.mkdir(exist_ok=True)
-
-
-def get_state():
-    if sys.platform == 'darwin':
-        from worktime_tracker.macos.get_state import get_state
-        return get_state()
-
-    raise NotImplementedError('OS {sys.platform} is not supported yet')
 
 
 def reverse_read_line(filename, buf_size=8192):

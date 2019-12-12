@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 import shutil
 import time
 
-from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, get_state, reverse_read_line, seconds_to_human_readable
+from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, reverse_read_line, seconds_to_human_readable
+from worktime_tracker.spaces import get_state
 
 
 def write_last_check(timestamp):
@@ -109,8 +110,8 @@ def get_work_time(start_timestamp, end_timestamp):
 
 class WorktimeTracker:
 
-    states = ['work', 'email', 'leisure', 'idle']
-    work_states = ['work', 'email']
+    states = ['work', 'personal', 'locked']
+    work_states = ['work']
     targets = {
         0: 6.25 * 3600,  # Monday
         1: 6.25 * 3600,  # Tuesday

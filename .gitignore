@@ -2,4 +2,5 @@
 *.swp
 .venv
 .logs/*
-last_check
+last_check.txt
+space_types.json

@@ -1,4 +1,34 @@
 import sys
+import time
+import json
+
+from worktime_tracker.spaces import get_space_id
+from worktime_tracker.utils import SPACE_TYPES_PATH
+
+
+def setup_spaces(get_space_id):
+    if SPACE_TYPES_PATH.exists():
+        return
+    print('Welcome to WorktimeTracker. In order for the tool to work, you need to create multiple spaces.'
+          'Please go into each of your spaces and indicate whether it is a "Work" or a "Personal" space')
+    spaces = {}
+    time.sleep(3)
+    try:
+        while True:
+            space_id = get_space_id()
+            if space_id in spaces:
+                print('Move to another workspace or hit ctrl-c to finish.')
+                time.sleep(3)
+                continue
+            answer = input('Is this a "Work" or a "Personal" space? (w/p)').lower()
+            assert answer in ['w', 'p']
+            space_type = {'w': 'work', 'p': 'personal'}[answer]
+            print(f'Writing that {space_id} is a {space_type} space.')
+            spaces[space_id] = space_type
+    except KeyboardInterrupt:
+        print('Writing spaces to {SPACE_TYPES_PATH}')
+    with open(SPACE_TYPES_PATH, 'w') as f:
+        json.dump(spaces, f)
 
 
 def start_macos_status_bar_app():
@@ -28,10 +58,12 @@ def windows_main():
 
 if __name__ == '__main__':
     if sys.platform == 'darwin':
-        macos_main()
+        main = macos_main
     elif sys.platform == 'linux':
-        linux_main()
+        main = linux_main
     elif sys.platform == 'win32':
-        windows_main()
+        main = windows_main
     else:
         raise NotImplementedError(f'OS {sys.platform} is not supported')
+    setup_spaces(get_space_id)
+    main()
