@@ -6,11 +6,11 @@ from pathlib import Path
 REPO_DIR = Path(__file__).resolve().parent.parent
 LOGS_PATH = REPO_DIR / '.logs/logs.tsv'
 LAST_CHECK_PATH = REPO_DIR / 'last_check.txt'
-SPACE_TYPES_PATH = REPO_DIR / 'spaces_types.json'
+SPACE_TYPES_PATH = REPO_DIR / 'space_types.json'
 LOGS_PATH.parent.mkdir(exist_ok=True)
 
 
-def reverse_read_line(filename, buf_size=8192):
+def reverse_read_lines(filename, buf_size=8192):
     '''a generator that returns the lines of a file in reverse order'''
     with open(filename) as fh:
         segment = None
@@ -50,3 +50,9 @@ def seconds_to_human_readable(seconds):
     sec = timedelta(seconds=seconds)
     d = datetime(1, 1, 1) + sec
     return f'{sign}{d.hour}h{d.minute:02d}m'
+
+
+def yield_lines(filepath):
+    with open(filepath, 'r') as f:
+        for line in f:
+            yield line.strip('\n')

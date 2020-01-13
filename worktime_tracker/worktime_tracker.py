@@ -3,8 +3,11 @@ from datetime import datetime, timedelta
 import shutil
 import time
 
-from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, reverse_read_line, seconds_to_human_readable
+from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, reverse_read_lines, seconds_to_human_readable
 from worktime_tracker.spaces import get_state
+
+
+ALL_LOGS = []
 
 
 def write_last_check(timestamp):
@@ -12,9 +15,23 @@ def write_last_check(timestamp):
         f.write(str(timestamp) + '\n')
 
 
-def read_last_check():
+def read_last_check_timestamp():
     with LAST_CHECK_PATH.open('r') as f:
         return float(f.readline().strip())
+
+
+def maybe_fix_unfinished_work_state():
+    '''If the app was killed during a work state, it will count everything from this moment as work.
+    We want to fix it if this is the case'''
+    timestamp = time.time()
+    last_check_timestamp = read_last_check_timestamp()
+    last_timestamp, last_state = read_last_log()
+    if timestamp - last_check_timestamp < 60:
+        return
+    if last_state not in WorktimeTracker.work_states:
+        return
+    write_last_check(timestamp)
+    maybe_write_log(last_check_timestamp + 1, 'locked')
 
 
 def maybe_write_log(timestamp, state):
@@ -31,13 +48,28 @@ def parse_log_line(log_line):
     return float(timestamp), state
 
 
+def get_all_logs():
+    # We don't reload all logs each time, just the new ones
+    global ALL_LOGS
+    last_timestamp = 0
+    if len(ALL_LOGS) > 0:
+        last_timestamp, _ = ALL_LOGS[-1]  # Last loaded log
+    LOGS_PATH.touch()  # Creates file if it does not exist
+    new_logs = []
+    # Read file in reverse to find new logs that are not loaded yet
+    for line in reverse_read_lines(LOGS_PATH):
+        timestamp, state = parse_log_line(line)
+        if timestamp <= last_timestamp:
+            break
+        new_logs.append((timestamp, state))
+    ALL_LOGS.extend(new_logs[::-1])
+    return ALL_LOGS.copy()
+
+
 def get_logs(start_timestamp, end_timestamp):
     end_timestamp = min(end_timestamp, time.time())
-    LOGS_PATH.touch()  # Creates file if it does not exist
-    logs = [(end_timestamp, 'idle')]  # Add a virtual state at the end of the logs to count the last state
-    reverse_line_generator = reverse_read_line(LOGS_PATH)
-    for line in reverse_line_generator:
-        timestamp, state = parse_log_line(line)
+    logs = [(end_timestamp, 'locked')]  # Add a virtual state at the end of the logs to count the last state
+    for timestamp, state in get_all_logs()[::-1]:  # Read the logs backward
         if timestamp > end_timestamp:
             continue
         if timestamp < start_timestamp:
@@ -49,10 +81,19 @@ def get_logs(start_timestamp, end_timestamp):
 
 def read_last_log():
     try:
-        last_line = next(reverse_read_line(LOGS_PATH))
-        return parse_log_line(last_line)
+        last_line = next(reverse_read_lines(LOGS_PATH))
     except StopIteration:
         return None
+    return parse_log_line(last_line)
+
+
+def read_first_log():
+    with open(LOGS_PATH, 'r') as f:
+        try:
+            first_line = next(f)
+        except StopIteration:
+            return None
+        return parse_log_line(first_line)
 
 
 def rewrite_history(start_timestamp, end_timestamp, new_state):
@@ -125,6 +166,7 @@ class WorktimeTracker:
     day_start_hour = 7  # Hour at which the day starts
 
     def __init__(self, read_only=False):
+        maybe_fix_unfinished_work_state()
         self.read_only = read_only
 
     @staticmethod

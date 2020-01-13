@@ -14,5 +14,3 @@ def get_space_id():
 
 def is_screen_locked():
     return Quartz.CGSessionCopyCurrentDictionary().get('CGSSessionScreenIsLocked', 0) == 1
-
-
