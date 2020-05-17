@@ -1,0 +1,35 @@
+LIBRARY DLLMAIN
+EXPORTS
+    GetCurrentDesktopNumber @8
+    GetDesktopCount @1
+	GetDesktopIdByNumber @12
+    GetDesktopNumber @7
+    GetDesktopNumberById @2
+    GetWindowDesktopId @3
+    GetWindowDesktopNumber @4
+    IsWindowOnCurrentVirtualDesktop @5
+    MoveWindowToDesktopNumber @6
+    GoToDesktopNumber @9
+    RegisterPostMessageHook @10
+    UnregisterPostMessageHook @11
+    IsPinnedWindow @13
+    PinWindow @14
+    UnPinWindow @15
+    IsPinnedApp @16
+    PinApp @17
+    UnPinApp @18
+
+	EnableKeepMinimized @19
+	RestoreMinimized @20
+	IsWindowOnDesktopNumber @21
+	RestartVirtualDesktopAccessor @22
+
+	ViewIsShownInSwitchers @23
+	ViewIsVisible @24
+	ViewGetThumbnailHwnd @25
+	ViewSetFocus @26
+	ViewSwitchTo @27
+	ViewGetByZOrder @28
+	ViewGetFocused @29
+	ViewGetLastActivationTimestamp @30
+	ViewGetByLastActivationOrder @31

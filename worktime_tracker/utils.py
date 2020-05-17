@@ -13,6 +13,9 @@ def get_state():
     if sys.platform == 'darwin':
         from worktime_tracker.macos.get_state import get_state
         return get_state()
+    if sys.platform == 'win32':
+        from worktime_tracker.windows.get_state import get_state
+        return get_state()
 
     raise NotImplementedError('OS {sys.platform} is not supported yet')
 

@@ -22,7 +22,6 @@ def linux_main():
 
 
 def windows_main():
-    raise NotImplementedError('Windows not supported yet')
     start_pyqt_gui()  # TODO: There is no get_state() method yet
 
 
