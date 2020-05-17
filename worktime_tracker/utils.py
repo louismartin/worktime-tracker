@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 import os
 from pathlib import Path
-import sys
 
 
 REPO_DIR = Path(__file__).resolve().parent.parent
-LOGS_PATH = REPO_DIR / 'logs.tsv'
-LAST_CHECK_PATH = REPO_DIR / 'last_check'
+LOGS_PATH = REPO_DIR / '.logs/logs.tsv'
+LAST_CHECK_PATH = REPO_DIR / 'last_check.txt'
+SPACE_TYPES_PATH = REPO_DIR / 'space_types.json'
+LOGS_PATH.parent.mkdir(exist_ok=True)
 
 
 def get_state():
@@ -54,8 +55,15 @@ def reverse_read_line(filename, buf_size=8192):
 
 
 def seconds_to_human_readable(seconds):
+    assert seconds < 3600 * 24, 'More than one day not supported'
     sign = (lambda x: ('', '-')[x < 0])(seconds)
     seconds = int(abs(seconds))
     sec = timedelta(seconds=seconds)
     d = datetime(1, 1, 1) + sec
     return f'{sign}{d.hour}h{d.minute:02d}m'
+
+
+def yield_lines(filepath):
+    with open(filepath, 'r') as f:
+        for line in f:
+            yield line.strip('\n')
