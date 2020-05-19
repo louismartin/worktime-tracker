@@ -21,7 +21,7 @@ def get_state():
     raise NotImplementedError('OS {sys.platform} is not supported yet')
 
 
-def reverse_read_line(filename, buf_size=8192):
+def reverse_read_lines(filename, buf_size=8192):
     '''a generator that returns the lines of a file in reverse order'''
     with open(filename) as fh:
         segment = None
