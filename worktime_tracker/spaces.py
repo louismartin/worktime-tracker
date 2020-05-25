@@ -7,6 +7,8 @@ from worktime_tracker.utils import SPACE_TYPES_PATH
 
 if sys.platform == 'darwin':
     from worktime_tracker.macos.get_space_id import get_space_id, is_screen_locked
+elif sys.platform == 'win32':
+    from worktime_tracker.windows.get_space_id import get_space_id, is_screen_locked
 else:
     raise NotImplementedError('OS {sys.platform} is not supported yet')
 

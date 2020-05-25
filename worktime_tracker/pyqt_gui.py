@@ -23,7 +23,7 @@ class Window(QLabel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setWindowTitle('State Tracker')
-        self.set_geometry(n_lines=WorktimeTracker.current_weekday() + 1, max_characters=20)
+        self.set_geometry(n_lines=WorktimeTracker.get_current_weekday() + 1, max_characters=20)
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.start_thread()
 
