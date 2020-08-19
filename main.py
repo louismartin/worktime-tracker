@@ -41,6 +41,11 @@ def start_pyqt_gui():
     start()
 
 
+def start_cli():
+    from worktime_tracker.cli.cli import start
+    start()
+
+
 def macos_main():
     print('Starting Worktime Tracker for macOS')
     start_macos_status_bar_app()

@@ -153,16 +153,24 @@ class WorktimeTracker:
 
     states = ['work', 'personal', 'locked']
     work_states = ['work']
-    targets = {
-        0: 6.25 * 3600,  # Monday
-        1: 6.25 * 3600,  # Tuesday
-        2: 6.25 * 3600,  # Wednesday
-        3: 6.25 * 3600,  # Thursday
-        4: 5 * 3600,  # Friday
-        5: 0,  # Saturday
-        6: 0,  # Sunday
-    }
-    weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    targets = [
+        0,  # Sunday
+        6.25 * 3600,  # Monday
+        6.25 * 3600,  # Tuesday
+        6.25 * 3600,  # Wednesday
+        6.25 * 3600,  # Thursday
+        5 * 3600,  # Friday
+        0,  # Saturday
+    ]
+    weekdays = [
+            'Sunday',
+            'Monday',
+            'Tuesday',
+            'Wednesday',
+            'Thursday',
+            'Friday',
+            'Saturday',
+    ]
     day_start_hour = 7  # Hour at which the day starts
 
     def __init__(self, read_only=False):
@@ -184,7 +192,8 @@ class WorktimeTracker:
 
     @staticmethod
     def get_current_weekday():
-        return (datetime.today() - timedelta(hours=WorktimeTracker.day_start_hour)).weekday()
+        # Add +2 to start the week on saturday
+        return ((datetime.today() - timedelta(hours=WorktimeTracker.day_start_hour)).weekday() + WorktimeTracker.weekdays.index('Monday')) % 7
 
     @staticmethod
     def get_current_day_start():

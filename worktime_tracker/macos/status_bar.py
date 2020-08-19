@@ -28,7 +28,7 @@ class StatusBarApp(rumps.App):
         self.worktime_tracker = WorktimeTracker()
         self.refresh(None)
 
-    @rumps.timer(5)
+    @rumps.timer(10)
     def refresh(self, _):
         try:
             self.worktime_tracker.check_state()
