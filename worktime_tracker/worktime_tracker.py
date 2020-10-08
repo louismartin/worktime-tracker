@@ -96,26 +96,22 @@ def read_first_log():
         return parse_log_line(first_line)
 
 
-def rewrite_history(start_timestamp, end_timestamp, new_state):
-    # Careful, this methods rewrites the entire log file
-    shutil.copy(LOGS_PATH, f'{LOGS_PATH}.bck{int(time.time())}')
-    with LOGS_PATH.open('r') as f:
-        logs = get_logs(start_timestamp=0, end_timestamp=time.time())
+def get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs):
     assert end_timestamp < logs[-1][0], 'Rewriting the future not allowed'
     # Remove logs that are in the interval to be rewritten
     logs_before = [(timestamp, state) for (timestamp, state) in logs
-                   if timestamp < start_timestamp]
+                   if timestamp <= start_timestamp]
     logs_after = [(timestamp, state) for (timestamp, state) in logs
                   if timestamp > end_timestamp]
     logs_inside = [(timestamp, state) for (timestamp, state) in logs
-                   if start_timestamp <= timestamp and timestamp <= end_timestamp]
+                   if start_timestamp < timestamp and timestamp <= end_timestamp]
     if len(logs_inside) > 0:
         # Push back last log inside to be the first of logs after (the rewritten history needs to end on the same
         # state as it was actually recorded)
-        logs_after = [(f'{end_timestamp:.6f}', logs_inside[-1][1])] + logs_after
+        logs_after = [(end_timestamp, logs_inside[-1][1])] + logs_after
     else:
-        # If there were no states inside, then just take the first log after
-        logs_after = [(f'{end_timestamp:.6f}', logs_after[0][1])] + logs_after
+        # If there were no states inside, then just take the last log before to have the same state
+        logs_after = [(end_timestamp, logs_before[-1][1])] + logs_after
     # Edge cases to not have two identical subsequent states
     if logs_before[-1][1] == new_state:
         # Change the start date to the previous one if it is the same state
@@ -124,10 +120,20 @@ def rewrite_history(start_timestamp, end_timestamp, new_state):
     if logs_after[0][1] == new_state:
         # Remove first element if it is the same as the one we are going to introduce
         logs_after = logs_after[1:]
-    new_logs = logs_before + [(f'{start_timestamp:.6f}', new_state)] + logs_after
+    return logs_before + [(start_timestamp, new_state)] + logs_after
+
+
+def rewrite_history(start_timestamp, end_timestamp, new_state):
+    # Careful, this methods rewrites the entire log file
+    shutil.copy(LOGS_PATH, f'{LOGS_PATH}.bck{int(time.time())}')
+    with LOGS_PATH.open('r') as f:
+        logs = get_logs(start_timestamp=0, end_timestamp=time.time())
+    new_logs = get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs)
     with LOGS_PATH.open('w') as f:
         for timestamp, state in new_logs:
             f.write(f'{timestamp}\t{state}\n')
+    global ALL_LOGS
+    ALL_LOGS[:] = []  # Reset logs
 
 
 def get_cum_times_per_state(start_timestamp, end_timestamp):
