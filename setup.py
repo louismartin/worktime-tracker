@@ -37,6 +37,20 @@ def custom_setup():
         setup_macos()
 
 
+def get_requirements():
+    with open('requirements.txt', 'r') as f:
+        requirements = f.read().strip().split('\n')
+    if sys.platform == 'darwin':
+        with open('requirements_macos.txt', 'r') as f:
+            requirements += f.read().strip().split('\n')
+    elif sys.platform == 'win32':
+        with open('requirements_windows.txt', 'r') as f:
+            requirements += f.read().strip().split('\n')
+    else:
+        raise NotImplementedError(f'OS {sys.platform} is not supported')
+    return requirements
+
+
 class PostDevelopCommand(develop):
     """Post-installation for development mode."""
     def run(self):
@@ -62,4 +76,5 @@ setup(
         'develop': PostDevelopCommand,
         'install': PostInstallCommand,
     },
+    install_requires=requirements,
 )
