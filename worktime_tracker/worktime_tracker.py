@@ -16,6 +16,9 @@ def write_last_check(timestamp):
 
 
 def read_last_check_timestamp():
+    if not LAST_CHECK_PATH.exists():
+        with open(LAST_CHECK_PATH, 'w') as f:
+            f.write('0\n')
     with LAST_CHECK_PATH.open('r') as f:
         return float(f.readline().strip())
 
@@ -34,18 +37,30 @@ def maybe_fix_unfinished_work_state():
     maybe_write_log(last_check_timestamp + 1, 'locked')
 
 
+def write_log(timestamp, state):
+    with LOGS_PATH.open('a') as f:
+        f.write(f'{timestamp}\t{state}\n')
+
+
 def maybe_write_log(timestamp, state):
     # TODO: lock file
     _, last_state = read_last_log()
     if last_state == state:
         return
-    with LOGS_PATH.open('a') as f:
-        f.write(f'{timestamp}\t{state}\n')
+    write_log(timestamp, state)
 
 
 def parse_log_line(log_line):
     timestamp, state = log_line.strip().split('\t')
     return float(timestamp), state
+
+
+def reverse_read_logs():
+    if not LOGS_PATH.exists():
+        LOGS_PATH.parent.mkdir(exist_ok=True)
+        write_log(timestamp=0, state='locked')
+    for line in reverse_read_lines(LOGS_PATH):
+        yield parse_log_line(line)
 
 
 def get_all_logs():
@@ -54,11 +69,9 @@ def get_all_logs():
     last_timestamp = 0
     if len(ALL_LOGS) > 0:
         last_timestamp, _ = ALL_LOGS[-1]  # Last loaded log
-    LOGS_PATH.touch()  # Creates file if it does not exist
     new_logs = []
     # Read file in reverse to find new logs that are not loaded yet
-    for line in reverse_read_lines(LOGS_PATH):
-        timestamp, state = parse_log_line(line)
+    for timestamp, state in reverse_read_logs():
         if timestamp <= last_timestamp:
             break
         new_logs.append((timestamp, state))
@@ -81,10 +94,9 @@ def get_logs(start_timestamp, end_timestamp):
 
 def read_last_log():
     try:
-        last_line = next(reverse_read_lines(LOGS_PATH))
+        return next(reverse_read_logs())
     except StopIteration:
         return None
-    return parse_log_line(last_line)
 
 
 def read_first_log():

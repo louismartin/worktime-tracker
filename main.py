@@ -17,7 +17,7 @@ def setup_spaces(get_space_id):
         while True:
             space_id = get_space_id()
             if space_id in spaces:
-                print(f'Move to another workspace or hit ctrl-c to finish (current: {space_id}.')
+                print(f'Move to another workspace or hit ctrl-c to finish (current: {space_id}).')
                 time.sleep(3)
                 continue
             answer = input(f'{space_id}: Is this a "Work" or a "Personal" space? (w/p): ').lower()
@@ -57,8 +57,7 @@ def linux_main():
 
 
 def windows_main():
-    raise NotImplementedError('Windows not supported yet')
-    start_pyqt_gui()  # TODO: There is no get_state() method yet
+    start_pyqt_gui()
 
 
 if __name__ == '__main__':

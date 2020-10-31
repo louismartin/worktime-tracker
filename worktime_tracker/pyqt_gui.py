@@ -15,7 +15,7 @@ class WorktimeTrackerThread(QThread, WorktimeTracker):
             state_changed = self.check_state()
             if state_changed:
                 self.state_changed.emit()
-            time.sleep(0.1)
+            time.sleep(10)
 
 
 class Window(QLabel):
@@ -23,7 +23,7 @@ class Window(QLabel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setWindowTitle('State Tracker')
-        self.set_geometry(n_lines=WorktimeTracker.current_weekday() + 1, max_characters=20)
+        self.set_geometry(n_lines=WorktimeTracker.get_current_weekday() + 1, max_characters=20)
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.start_thread()
 
