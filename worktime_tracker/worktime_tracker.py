@@ -148,6 +148,20 @@ def rewrite_history(start_timestamp, end_timestamp, new_state):
     ALL_LOGS[:] = []  # Reset logs
 
 
+def rewrite_history_prompt():
+    now = datetime.now()
+    day_offset = input('Day offset? (default=0)')
+    start = input('Start time? (hh:mm): ')
+    end = input('End time? (hh:mm): ')
+    day_offset = int(day_offset) if day_offset != '' else 0
+    start_hour, start_minute = [int(x) for x in start.split(':')]
+    end_hour, end_minute = [int(x) for x in end.split(':')]
+    start = now.replace(day=now.day + day_offset, hour=start_hour, minute=start_minute, second=0, microsecond=0).timestamp()
+    end = now.replace(day=now.day + day_offset, hour=end_hour, minute=end_minute, second=0, microsecond=0).timestamp()
+    new_state = input('New state?: ')
+    rewrite_history(start, end, new_state)
+
+
 def get_cum_times_per_state(start_timestamp, end_timestamp):
     assert start_timestamp < end_timestamp
     logs = get_logs(start_timestamp, end_timestamp)
