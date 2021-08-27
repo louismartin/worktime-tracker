@@ -1,11 +1,13 @@
 import time
 import datetime
 import re
+import subprocess
 
 from tqdm import tqdm
 
 from worktime_tracker.worktime_tracker import WorktimeTracker
 from worktime_tracker.utils import seconds_to_human_readable
+from worktime_tracker.tools import rewrite_history_prompt, download_productivity_plot
 
 
 def parse_time(time_str):
@@ -18,6 +20,20 @@ def parse_time(time_str):
         if param:
             time_params[name] = int(param)
     return datetime.timedelta(**time_params)
+
+
+def pause():
+    duration = parse_time(input('Enter a duration to pause during a certain time (e.g. 2h30).\nDuration: '))
+    if duration is not None:
+        print(f'Pausing for {duration}.')
+        for i in tqdm(range(duration.seconds)):
+            time.sleep(1)
+
+
+def plot_productivity():
+    productivity_plot_path = download_productivity_plot()
+    # TODO: Only works on macos for now
+    subprocess.run(['open', productivity_plot_path])
 
 
 def start():
@@ -35,9 +51,12 @@ def start():
             print(' - '.join([title] + menu) + '\r', end='')
             time.sleep(30)
         except KeyboardInterrupt:
-            duration = parse_time(input('\nInterrupted, press ctrl-c a second time to quit or enter a duration to pause during a certain time (e.g. 2h30).\nDuration: '))
-            if duration is not None:
-                print(f'Pausing for {duration}.')
-                for i in tqdm(range(duration.seconds)):
-                    time.sleep(1)
-
+            options_to_methods = {
+                    '0. Pause for a certain duration': pause,
+                    '1. Plot productivity': plot_productivity,
+                    '2. Rewrite history': rewrite_history_prompt,
+            }
+            options_str = '\n'.join(options_to_methods.keys())
+            option_index = int(input(f'\nInterrupted, press ctrl-c a second time to quit or select one of the following options:\n\n{options_str}\n\nOption: '))
+            method = list(options_to_methods.values())[option_index]
+            method()

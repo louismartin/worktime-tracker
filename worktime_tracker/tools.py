@@ -50,5 +50,6 @@ def get_todays_productivity_plot():
     return get_productivity_plot(start_timestamp, end_timestamp)
 
 
-def download_productivity_plot():
-    get_todays_productivity_plot().write_image('productivity_plot.png')
+def download_productivity_plot(path='productivity_plot.png'):
+    get_todays_productivity_plot().write_image(path)
+    return path
