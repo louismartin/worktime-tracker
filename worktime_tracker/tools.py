@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
+from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.worktime_tracker import rewrite_history, get_work_time, WorktimeTracker
 
 
@@ -27,7 +28,7 @@ def get_productivity_plot(start_timestamp, end_timestamp):
         d = datetime.fromtimestamp(timestamp)
         return f'{d.hour}h{d.minute:02d}'
 
-    bin_size = 10 * 60
+    bin_size = 15 * 60
     n_bins = int((end_timestamp - start_timestamp) / bin_size)
     end_timestamp = start_timestamp + n_bins * bin_size
     bin_starts = np.arange(start_timestamp, end_timestamp, bin_size)
@@ -37,9 +38,10 @@ def get_productivity_plot(start_timestamp, end_timestamp):
         table.append(
             {'work_time': get_work_time(bin_start, bin_end), 'bin_start': bin_start, 'bin_end': bin_end, 'formatted_start_time': format_timestamp(bin_start)}
         )
+    total_work_time = get_work_time(start_timestamp, end_timestamp)
     df = pd.DataFrame(table).sort_values('bin_start')
     df['work_time_m'] = df['work_time'] / 60
-    fig = px.histogram(df, x='formatted_start_time', y='work_time_m', histfunc='sum')
+    fig = px.histogram(df, x='formatted_start_time', y='work_time_m', histfunc='sum', title=f'Total Work Time = {seconds_to_human_readable(total_work_time)}')
     return fig
 
 
