@@ -7,6 +7,7 @@ from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, reverse_read_line
 from worktime_tracker.spaces import get_state
 
 
+# TODO: Move all logs handling logic to worktime_tracker/logs.py
 ALL_LOGS = []
 
 
