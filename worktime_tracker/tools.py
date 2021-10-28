@@ -18,7 +18,7 @@ def rewrite_history_prompt():
     start_hour, start_minute = [int(x) for x in start.split(':')]
     end = input('End time? (hh:mm): ')
     end_hour, end_minute = [int(x) for x in end.split(':')]
-    day_offset = 0  # day_offset = input('Day offset? (default=0)')
+    day_offset = input('Day offset? (default=0): ')
     day_offset = int(day_offset) if day_offset != '' else 0
     start = (now + timedelta(days=day_offset)).replace(hour=start_hour, minute=start_minute, second=0, microsecond=0).timestamp()
     end = (now + timedelta(days=day_offset)).replace(hour=end_hour, minute=end_minute, second=0, microsecond=0).timestamp()
