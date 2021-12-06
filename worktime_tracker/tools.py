@@ -9,20 +9,8 @@ import plotly.express as px
 from tqdm import tqdm
 
 from worktime_tracker.utils import seconds_to_human_readable
-from worktime_tracker.worktime_tracker import rewrite_history, get_work_time, WorktimeTracker, read_first_log
-
-
-def rewrite_history(start_timestamp, end_timestamp, new_state):
-    # Careful, this methods rewrites the entire log file
-    shutil.copy(LOGS_PATH, f'{LOGS_PATH}.bck{int(time.time())}')
-    with LOGS_PATH.open('r') as f:
-        logs = get_logs(start_timestamp=0, end_timestamp=time.time())
-    new_logs = get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs)
-    with LOGS_PATH.open('w') as f:
-        for timestamp, state in new_logs:
-            f.write(f'{timestamp}\t{state}\n')
-    global ALL_LOGS
-    ALL_LOGS[:] = []  # Reset logs
+from worktime_tracker.worktime_tracker import get_work_time, WorktimeTracker
+from worktime_tracker.logs import rewrite_history, read_first_log
 
 
 def rewrite_history_prompt():
@@ -52,12 +40,23 @@ def get_productivity_plot(start_timestamp, end_timestamp):
     table = []
     for bin_start, bin_end in zip(bin_starts, bin_ends):
         table.append(
-            {'work_time': get_work_time(bin_start, bin_end), 'bin_start': bin_start, 'bin_end': bin_end, 'formatted_start_time': format_timestamp(bin_start)}
+            {
+                'work_time': get_work_time(bin_start, bin_end),
+                'bin_start': bin_start,
+                'bin_end': bin_end,
+                'formatted_start_time': format_timestamp(bin_start),
+            }
         )
     total_work_time = get_work_time(start_timestamp, end_timestamp)
     df = pd.DataFrame(table).sort_values('bin_start')
     df['work_time_m'] = df['work_time'] / 60
-    fig = px.histogram(df, x='formatted_start_time', y='work_time_m', histfunc='sum', title=f'Total Work Time = {seconds_to_human_readable(total_work_time)}')
+    fig = px.histogram(
+        df,
+        x='formatted_start_time',
+        y='work_time_m',
+        histfunc='sum',
+        title=f'Total Work Time = {seconds_to_human_readable(total_work_time)}',
+    )
     return fig
 
 
@@ -86,19 +85,21 @@ def get_hourly_worktime_df():
             start_timestamp = start_datetime.timestamp()
             # Weird behaviour with daylight savings time, start and end are equal
             end_timestamp = max(end_datetime.timestamp(), start_timestamp + 1)
-            table.append({
-                'work_time': get_work_time(start_timestamp, end_timestamp) / 3600,
-                'start_datetime': start_datetime,
-                'year': start_datetime.year,
-                'month': start_datetime.month,
-                'day': start_datetime.day,
-                'hour': start_datetime.hour,
-                'year_month': start_datetime.strftime('Y:%y %b'),
-                'year_week': start_datetime.strftime('Y:%y w:%V'),
-                'year_day': start_datetime.strftime('Y:%y %b d:%d'),
-                'formatted_date': start_datetime.strftime('%Y-%m-%d'),
-                'dow': start_datetime.strftime('%A'),
-            })
+            table.append(
+                {
+                    'work_time': get_work_time(start_timestamp, end_timestamp) / 3600,
+                    'start_datetime': start_datetime,
+                    'year': start_datetime.year,
+                    'month': start_datetime.month,
+                    'day': start_datetime.day,
+                    'hour': start_datetime.hour,
+                    'year_month': start_datetime.strftime('Y:%y %b'),
+                    'year_week': start_datetime.strftime('Y:%y w:%V'),
+                    'year_day': start_datetime.strftime('Y:%y %b d:%d'),
+                    'formatted_date': start_datetime.strftime('%Y-%m-%d'),
+                    'dow': start_datetime.strftime('%A'),
+                }
+            )
             end_datetime = start_datetime
             pbar.update(1)
     return pd.DataFrame(table).sort_values('start_datetime')
@@ -107,4 +108,8 @@ def get_hourly_worktime_df():
 def get_daily_worktime_df():
     df_hourly = get_hourly_worktime_df()
     daily_columns = [col for col in df_hourly.columns if col not in ['hour', 'start_datetime', 'work_time']]
-    return df_hourly.groupby(daily_columns)['start_datetime', 'work_time'].agg({'start_datetime': 'min', 'work_time': 'sum'}).reset_index()
+    return (
+        df_hourly.groupby(daily_columns)['start_datetime', 'work_time']
+        .agg({'start_datetime': 'min', 'work_time': 'sum'})
+        .reset_index()
+    )

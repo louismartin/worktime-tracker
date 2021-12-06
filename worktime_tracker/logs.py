@@ -1,4 +1,5 @@
 import time
+import shutil
 
 from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, reverse_read_lines
 
@@ -113,3 +114,15 @@ def get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs):
         # Remove first element if it is the same as the one we are going to introduce
         logs_after = logs_after[1:]
     return logs_before + [(start_timestamp, new_state)] + logs_after
+
+
+def rewrite_history(start_timestamp, end_timestamp, new_state):
+    # Careful, this methods rewrites the entire log file
+    shutil.copy(LOGS_PATH, f'{LOGS_PATH}.bck{int(time.time())}')
+    with LOGS_PATH.open('r') as f:
+        logs = get_logs(start_timestamp=0, end_timestamp=time.time())
+    new_logs = get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs)
+    with LOGS_PATH.open('w') as f:
+        for timestamp, state in new_logs:
+            f.write(f'{timestamp}\t{state}\n')
+    ALL_LOGS[:] = []  # Reset logs

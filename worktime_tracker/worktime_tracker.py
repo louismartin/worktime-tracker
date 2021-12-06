@@ -15,7 +15,7 @@ def get_cum_times_per_state(start_timestamp, end_timestamp):
     for new_timestamp, new_state in logs[1:]:
         if new_state == current_state:
             continue
-        cum_times_per_state[current_state] += (new_timestamp - max(current_state_start_timestamp, start_timestamp))
+        cum_times_per_state[current_state] += new_timestamp - max(current_state_start_timestamp, start_timestamp)
         current_state = new_state
         current_state_start_timestamp = new_timestamp
     return cum_times_per_state
@@ -54,13 +54,13 @@ class WorktimeTracker:
         0,  # Saturday
     ]
     weekdays = [
-            'Sunday',
-            'Monday',
-            'Tuesday',
-            'Wednesday',
-            'Thursday',
-            'Friday',
-            'Saturday',
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
     ]
     day_start_hour = 7  # Hour at which the day starts
 
@@ -84,16 +84,18 @@ class WorktimeTracker:
     @staticmethod
     def get_current_weekday():
         # Add +2 to start the week on saturday
-        return ((datetime.today() - timedelta(hours=WorktimeTracker.day_start_hour)).weekday() + WorktimeTracker.weekdays.index('Monday')) % 7
+        return (
+            (datetime.today() - timedelta(hours=WorktimeTracker.day_start_hour)).weekday()
+            + WorktimeTracker.weekdays.index('Monday')
+        ) % 7
 
     @staticmethod
     def get_current_day_start():
-        return (datetime.today() - timedelta(hours=WorktimeTracker.day_start_hour)).replace(
-            hour=WorktimeTracker.day_start_hour,
-            minute=0,
-            second=0,
-            microsecond=0
-        ).timestamp()
+        return (
+            (datetime.today() - timedelta(hours=WorktimeTracker.day_start_hour))
+            .replace(hour=WorktimeTracker.day_start_hour, minute=0, second=0, microsecond=0)
+            .timestamp()
+        )
 
     @staticmethod
     def get_current_day_end():
@@ -102,10 +104,11 @@ class WorktimeTracker:
     @staticmethod
     def get_week_start():
         delta = timedelta(days=WorktimeTracker.get_current_weekday(), hours=WorktimeTracker.day_start_hour)
-        return (datetime.today() - delta).replace(hour=WorktimeTracker.day_start_hour,
-                                                  minute=0,
-                                                  second=0,
-                                                  microsecond=0).timestamp()
+        return (
+            (datetime.today() - delta)
+            .replace(hour=WorktimeTracker.day_start_hour, minute=0, second=0, microsecond=0)
+            .timestamp()
+        )
 
     @staticmethod
     def is_this_week(query_timestamp):
@@ -147,6 +150,7 @@ class WorktimeTracker:
 
     def lines(self):
         '''Nicely formatted lines for displaying to the user'''
+
         def weekday_text(weekday_idx):
             weekday = WorktimeTracker.weekdays[weekday_idx]
             work_time = self.get_work_time_from_weekday(weekday_idx)
@@ -155,10 +159,15 @@ class WorktimeTracker:
             return f'{weekday[:3]}: {int(100 * ratio)}% ({seconds_to_human_readable(work_time)})'
 
         def total_worktime_text():
-            work_time = sum([self.get_work_time_from_weekday(weekday_idx)
-                             for weekday_idx in range(WorktimeTracker.get_current_weekday())])
-            target = sum([WorktimeTracker.targets[weekday_idx]
-                          for weekday_idx in range(WorktimeTracker.get_current_weekday())])
+            work_time = sum(
+                [
+                    self.get_work_time_from_weekday(weekday_idx)
+                    for weekday_idx in range(WorktimeTracker.get_current_weekday())
+                ]
+            )
+            target = sum(
+                [WorktimeTracker.targets[weekday_idx] for weekday_idx in range(WorktimeTracker.get_current_weekday())]
+            )
             return f'Week overtime: {seconds_to_human_readable(work_time - target)}'
 
         lines = [weekday_text(weekday_idx) for weekday_idx in range(WorktimeTracker.get_current_weekday() + 1)][::-1]
