@@ -4,7 +4,7 @@ import shutil
 from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, reverse_read_lines
 
 
-ALL_LOGS = []
+_ALL_LOGS = []
 
 
 def write_last_check(timestamp):
@@ -49,16 +49,16 @@ def reverse_read_logs():
 def get_all_logs():
     # We don't reload all logs each time, just the new ones
     last_timestamp = 0
-    if len(ALL_LOGS) > 0:
-        last_timestamp, _ = ALL_LOGS[-1]  # Last loaded log
+    if len(_ALL_LOGS) > 0:
+        last_timestamp, _ = _ALL_LOGS[-1]  # Last loaded log
     new_logs = []
     # Read file in reverse to find new logs that are not loaded yet
     for timestamp, state in reverse_read_logs():
         if timestamp <= last_timestamp:
             break
         new_logs.append((timestamp, state))
-    ALL_LOGS.extend(new_logs[::-1])
-    return ALL_LOGS.copy()
+    _ALL_LOGS.extend(new_logs[::-1])
+    return _ALL_LOGS.copy()
 
 
 def get_logs(start_timestamp, end_timestamp):
@@ -125,4 +125,4 @@ def rewrite_history(start_timestamp, end_timestamp, new_state):
     with LOGS_PATH.open('w') as f:
         for timestamp, state in new_logs:
             f.write(f'{timestamp}\t{state}\n')
-    ALL_LOGS[:] = []  # Reset logs
+    _ALL_LOGS[:] = []  # Reset logs
