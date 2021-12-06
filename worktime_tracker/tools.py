@@ -12,6 +12,19 @@ from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.worktime_tracker import rewrite_history, get_work_time, WorktimeTracker, read_first_log
 
 
+def rewrite_history(start_timestamp, end_timestamp, new_state):
+    # Careful, this methods rewrites the entire log file
+    shutil.copy(LOGS_PATH, f'{LOGS_PATH}.bck{int(time.time())}')
+    with LOGS_PATH.open('r') as f:
+        logs = get_logs(start_timestamp=0, end_timestamp=time.time())
+    new_logs = get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs)
+    with LOGS_PATH.open('w') as f:
+        for timestamp, state in new_logs:
+            f.write(f'{timestamp}\t{state}\n')
+    global ALL_LOGS
+    ALL_LOGS[:] = []  # Reset logs
+
+
 def rewrite_history_prompt():
     now = datetime.now()
     start = input('Start time? (hh:mm): ')
