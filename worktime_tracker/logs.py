@@ -126,3 +126,17 @@ def rewrite_history(start_timestamp, end_timestamp, new_state):
         for timestamp, state in new_logs:
             f.write(f'{timestamp}\t{state}\n')
     _ALL_LOGS[:] = []  # Reset logs
+
+
+def remove_identical_consecutive_states(logs):
+    '''Cleans identical consecutive logs which should not change the resulting worktime.'''
+    previous_timestamp = None
+    previous_state = None
+    new_logs = []
+    for timestamp, state in logs:
+        if state == previous_state:
+            continue
+        new_logs.append((timestamp, state))
+        previous_timestamp = timestamp
+        previous_state = state
+    return new_logs
