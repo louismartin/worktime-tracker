@@ -1,7 +1,7 @@
+from collections import defaultdict
 from datetime import datetime, timedelta
 from functools import lru_cache
 import time
-import math
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.worktime_tracker import get_work_time, WorktimeTracker
-from worktime_tracker.logs import rewrite_history, read_first_log
+from worktime_tracker.logs import rewrite_history, read_first_log, Log, Interval, get_all_logs
 
 
 def rewrite_history_prompt():
@@ -41,6 +41,7 @@ def get_productivity_plot(start_timestamp, end_timestamp):
     for bin_start, bin_end in zip(bin_starts, bin_ends):
         table.append(
             {
+                # Very slow for old logs, would be better to use Discretizer
                 'work_time': get_work_time(bin_start, bin_end),
                 'bin_start': bin_start,
                 'bin_end': bin_end,
@@ -72,37 +73,70 @@ def download_productivity_plot(path='productivity_plot.png'):
     return path
 
 
-@lru_cache()
-def get_hourly_worktime_df():
-    first_timestamp, _ = read_first_log()
-    first_datetime = datetime.fromtimestamp(first_timestamp).replace(minute=0, second=0, microsecond=0)
-    end_datetime = datetime.now().replace(minute=0, second=0, microsecond=0)
-    table = []
-    total = math.ceil((end_datetime - first_datetime).total_seconds() / 3600)
-    with tqdm(total=total) as pbar:
-        while end_datetime >= first_datetime:
-            start_datetime = end_datetime - timedelta(hours=1)
-            start_timestamp = start_datetime.timestamp()
-            # Weird behaviour with daylight savings time, start and end are equal
-            end_timestamp = max(end_datetime.timestamp(), start_timestamp + 1)
-            table.append(
+class Discretizer:
+    def __init__(self, step, add_empty_bins=True):
+        first_log = Log(*read_first_log())
+        first_datetime = first_log.datetime.replace(minute=0, second=0, microsecond=0)
+        last_datetime = (datetime.now() + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+        self.first_timestamp = first_datetime.timestamp()
+        self.last_timestamp = last_datetime.timestamp()
+        self.step = step
+        if add_empty_bins:
+            self.worktime_accumulator = {bin_start: 0 for bin_start in self.get_bin_starts()}
+        else:
+            self.worktime_accumulator = defaultdict(float)
+
+    def get_bin_starts(self):
+        n_bins = int((self.last_timestamp - self.first_timestamp) // self.step)
+        return [self.first_timestamp + i * self.step for i in range(n_bins)]
+
+    def add_interval(self, interval):
+        if interval.state not in WorktimeTracker.work_states:
+            return
+        assert self.first_timestamp <= interval.start_timestamp and interval.end_timestamp <= self.last_timestamp
+        n_steps_since_start = (interval.start_timestamp - self.first_timestamp) // self.step
+        bin_start = self.first_timestamp + n_steps_since_start * self.step
+        bin_end = bin_start + self.step
+        if interval.end_timestamp > bin_end:
+            # print("Split ", interval, bin_start, bin_end)
+            for split_interval in interval.split(bin_end):
+                self.add_interval(split_interval)
+        else:
+            # print("Accumulating", interval, interval.end_timestamp - bin_start)
+            self.worktime_accumulator[bin_start] += interval.duration
+
+    def to_df(self):
+        records = []
+        for timestamp, work_time in self.worktime_accumulator.items():
+            dt = datetime.fromtimestamp(timestamp)
+            records.append(
                 {
-                    'work_time': get_work_time(start_timestamp, end_timestamp) / 3600,
-                    'start_datetime': start_datetime,
-                    'year': start_datetime.year,
-                    'month': start_datetime.month,
-                    'day': start_datetime.day,
-                    'hour': start_datetime.hour,
-                    'year_month': start_datetime.strftime('Y:%y %b'),
-                    'year_week': start_datetime.strftime('Y:%y w:%V'),
-                    'year_day': start_datetime.strftime('Y:%y %b d:%d'),
-                    'formatted_date': start_datetime.strftime('%Y-%m-%d'),
-                    'dow': start_datetime.strftime('%A'),
+                    'work_time': work_time,
+                    'start_datetime': dt,
+                    'year': dt.year,
+                    'month': dt.month,
+                    'day': dt.day,
+                    'hour': dt.hour,
+                    'year_month': dt.strftime('Y:%y %b'),
+                    'year_week': dt.strftime('Y:%y w:%V'),
+                    'year_day': dt.strftime('Y:%y %b d:%d'),
+                    'formatted_date': dt.strftime('%Y-%m-%d'),
+                    'dow': dt.strftime('%A'),
                 }
             )
-            end_datetime = start_datetime
-            pbar.update(1)
-    return pd.DataFrame(table).sort_values('start_datetime')
+        return pd.DataFrame(records)
+
+
+@lru_cache()
+def get_hourly_worktime_df():
+    logs = [Log(timestamp, state) for timestamp, state in get_all_logs()]
+    intervals = [Interval(start_log, end_log) for start_log, end_log in zip(logs, logs[1:])]
+    discretizer = Discretizer(step=3600)
+    for interval in intervals:
+        discretizer.add_interval(interval)
+    df_hourly = discretizer.to_df()
+    df_hourly['work_time'] /= 3600
+    return df_hourly
 
 
 def get_daily_worktime_df():

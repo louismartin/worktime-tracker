@@ -1,7 +1,8 @@
+from datetime import datetime
 import time
 import shutil
 
-from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, reverse_read_lines
+from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, reverse_read_lines, seconds_to_human_readable
 
 
 _ALL_LOGS = []
@@ -129,14 +130,83 @@ def rewrite_history(start_timestamp, end_timestamp, new_state):
 
 
 def remove_identical_consecutive_states(logs):
-    '''Cleans identical consecutive logs which should not change the resulting worktime.'''
-    previous_timestamp = None
+    '''Cleans identical consecutive logs which should not change the resulting worktime.
+
+    Should be used to clean the log file.'''
     previous_state = None
     new_logs = []
     for timestamp, state in logs:
         if state == previous_state:
             continue
         new_logs.append((timestamp, state))
-        previous_timestamp = timestamp
         previous_state = state
     return new_logs
+
+
+class Log:
+    # TODO: This log abstraction is not used yet, but it should replace using (timestamp, state) tuples
+    def __init__(self, timestamp, state):
+        self.timestamp = timestamp
+        self.state = state
+
+    @property
+    def datetime(self):
+        return datetime.fromtimestamp(self.timestamp)
+
+    def __repr__(self):
+        return f'Log<date={self.timestamp}, state={self.state}>'
+
+    def __eq__(self, other):
+        return self.timestamp == other.timestamp and self.state == other.state
+
+    def __lt__(self, other):
+        return self.timestamp < other.timestamp
+
+    def __le__(self, other):
+        return self.timestamp <= other.timestamp
+
+    def __gt__(self, other):
+        return self.timestamp > other.timestamp
+
+    def __ge__(self, other):
+        return self.timestamp >= other.timestamp
+
+
+class Interval:
+    def __init__(self, start_log, end_log):
+        assert start_log <= end_log
+        self.start_log = start_log
+        self.end_log = end_log
+
+    @property
+    def state(self):
+        return self.start_log.state
+
+    @property
+    def start_datetime(self):
+        return self.start_log.datetime
+
+    @property
+    def end_datetime(self):
+        return self.end_log.datetime
+
+    @property
+    def start_timestamp(self):
+        return self.start_log.timestamp
+
+    @property
+    def end_timestamp(self):
+        return self.end_log.timestamp
+
+    @property
+    def duration(self):
+        return self.end_timestamp - self.start_timestamp
+
+    def split(self, timestamp):
+        split_log = Log(timestamp, self.state)
+        assert self.start_log < split_log and split_log < self.end_log
+        return Interval(self.start_log, split_log), Interval(split_log, self.end_log)
+
+    def __repr__(self):
+        start_str = self.start_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        return f'Interval<state:{self.state}, start:{start_str}, duration:{seconds_to_human_readable(self.duration)}>'
