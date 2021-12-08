@@ -97,7 +97,7 @@ def get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs):
     logs_before = [(timestamp, state) for (timestamp, state) in logs if timestamp <= start_timestamp]
     logs_after = [(timestamp, state) for (timestamp, state) in logs if timestamp > end_timestamp]
     logs_inside = [
-        (timestamp, state) for (timestamp, state) in logs if start_timestamp < timestamp and timestamp <= end_timestamp
+        (timestamp, state) for (timestamp, state) in logs if (start_timestamp < timestamp <= end_timestamp)
     ]
     if len(logs_inside) > 0:
         # Push back last log inside to be the first of logs after (the rewritten history needs to end on the same
@@ -204,7 +204,7 @@ class Interval:
 
     def split(self, timestamp):
         split_log = Log(timestamp, self.state)
-        assert self.start_log < split_log and split_log < self.end_log
+        assert self.start_log < split_log < self.end_log
         return Interval(self.start_log, split_log), Interval(split_log, self.end_log)
 
     def __repr__(self):

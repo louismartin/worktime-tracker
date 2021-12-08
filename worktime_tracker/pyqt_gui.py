@@ -1,9 +1,10 @@
 import time
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, Qt
-from PyQt5.QtWidgets import QApplication, QLabel, QDesktopWidget
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, Qt  # pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import QApplication, QLabel, QDesktopWidget  # pylint: disable=no-name-in-module
 
 from worktime_tracker.worktime_tracker import WorktimeTracker
+from worktime_tracker.date_utils import get_current_weekday
 
 
 class WorktimeTrackerThread(QThread, WorktimeTracker):
@@ -23,7 +24,7 @@ class Window(QLabel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setWindowTitle('State Tracker')
-        self.set_geometry(n_lines=WorktimeTracker.get_current_weekday() + 1, max_characters=20)
+        self.set_geometry(n_lines=get_current_weekday() + 1, max_characters=20)
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.start_thread()
 

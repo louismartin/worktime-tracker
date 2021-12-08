@@ -38,10 +38,10 @@ def custom_setup():
 
 
 def get_requirements():
-    with open('requirements.txt', 'r') as f:
+    with open('requirements.txt', 'r', encoding='utf8') as f:
         requirements = f.read().strip().split('\n')
     if sys.platform == 'darwin':
-        with open('requirements_macos.txt', 'r') as f:
+        with open('requirements_macos.txt', 'r', encoding='utf8') as f:
             requirements += f.read().strip().split('\n')
     else:
         raise NotImplementedError(f'OS {sys.platform} is not supported')

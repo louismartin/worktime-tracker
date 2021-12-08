@@ -1,10 +1,9 @@
 from collections import defaultdict
 import time
-from worktime_tracker.date_utils import WEEKDAYS, get_weekday_start_and_end
 
 from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.spaces import get_state
-from worktime_tracker.constants import WORK_STATES, DAY_START_HOUR
+from worktime_tracker.constants import WORK_STATES
 from worktime_tracker.date_utils import get_weekday_start_and_end, WEEKDAYS, get_current_weekday
 from worktime_tracker.logs import get_logs, read_last_log, maybe_write_log, write_last_check, read_last_check_timestamp
 
@@ -73,13 +72,14 @@ class WorktimeTracker:
         work_time = get_work_time(start_timestamp, end_timestamp)
         return work_time / (end_timestamp - start_timestamp)
 
-    def get_work_time_from_weekday(self, weekday):
+    @staticmethod
+    def get_work_time_from_weekday(weekday):
         weekday_start, weekday_end = get_weekday_start_and_end(weekday)
         return get_work_time(weekday_start, weekday_end)
 
     def maybe_append_and_write_log(self, timestamp, state):
         if self.read_only:
-            return False
+            return
         maybe_write_log(timestamp, state)
 
     def check_state(self):
@@ -104,14 +104,9 @@ class WorktimeTracker:
 
         def total_worktime_text():
             work_time = sum(
-                [
-                    self.get_work_time_from_weekday(weekday_idx)
-                    for weekday_idx in range(get_current_weekday())
-                ]
+                [self.get_work_time_from_weekday(weekday_idx) for weekday_idx in range(get_current_weekday())]
             )
-            target = sum(
-                [WorktimeTracker.targets[weekday_idx] for weekday_idx in range(get_current_weekday())]
-            )
+            target = sum([WorktimeTracker.targets[weekday_idx] for weekday_idx in range(get_current_weekday())])
             return f'Week overtime: {seconds_to_human_readable(work_time - target)}'
 
         lines = [weekday_text(weekday_idx) for weekday_idx in range(get_current_weekday() + 1)][::-1]

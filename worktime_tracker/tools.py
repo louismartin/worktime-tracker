@@ -10,7 +10,7 @@ from worktime_tracker.constants import WORK_STATES
 
 from worktime_tracker.date_utils import get_current_day_start
 from worktime_tracker.utils import seconds_to_human_readable
-from worktime_tracker.worktime_tracker import get_work_time, WorktimeTracker
+from worktime_tracker.worktime_tracker import get_work_time
 from worktime_tracker.logs import rewrite_history, read_first_log, Log, get_all_logs, logs_to_intervals
 
 
@@ -22,8 +22,16 @@ def rewrite_history_prompt():
     end_hour, end_minute = [int(x) for x in end.split(':')]
     day_offset = input('Day offset? (default=0): ')
     day_offset = int(day_offset) if day_offset != '' else 0
-    start = (now + timedelta(days=day_offset)).replace(hour=start_hour, minute=start_minute, second=0, microsecond=0).timestamp()
-    end = (now + timedelta(days=day_offset)).replace(hour=end_hour, minute=end_minute, second=0, microsecond=0).timestamp()
+    start = (
+        (now + timedelta(days=day_offset))
+        .replace(hour=start_hour, minute=start_minute, second=0, microsecond=0)
+        .timestamp()
+    )
+    end = (
+        (now + timedelta(days=day_offset))
+        .replace(hour=end_hour, minute=end_minute, second=0, microsecond=0)
+        .timestamp()
+    )
     new_state = input('New state?: ')
     rewrite_history(start, end, new_state)
 

@@ -15,7 +15,7 @@ else:
 
 @lru_cache(maxsize=1)
 def get_space_types():
-    with open(SPACE_TYPES_PATH, 'r') as f:
+    with open(SPACE_TYPES_PATH, 'r', encoding='utf8') as f:
         return json.load(f)
 
 

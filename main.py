@@ -7,7 +7,7 @@ from worktime_tracker.spaces import get_space_id
 from worktime_tracker.utils import SPACE_TYPES_PATH
 
 
-def setup_spaces(get_space_id):
+def setup_spaces():
     if SPACE_TYPES_PATH.exists():
         return
     print('Welcome to WorktimeTracker. In order for the tool to work, you need to create multiple spaces.\n'
@@ -28,22 +28,22 @@ def setup_spaces(get_space_id):
             spaces[space_id] = space_type
     except KeyboardInterrupt:
         print(f'Writing spaces to {SPACE_TYPES_PATH}')
-    with open(SPACE_TYPES_PATH, 'w') as f:
+    with open(SPACE_TYPES_PATH, 'w', encoding='utf8') as f:
         json.dump(spaces, f)
 
 
 def start_macos_status_bar_app():
-    from worktime_tracker.macos.status_bar import start
+    from worktime_tracker.macos.status_bar import start  # pylint: disable=import-outside-toplevel
     start()
 
 
 def start_pyqt_gui():
-    from worktime_tracker.pyqt_gui import start
+    from worktime_tracker.pyqt_gui import start  # pylint: disable=import-outside-toplevel
     start()
 
 
 def start_cli():
-    from worktime_tracker.cli.cli import start
+    from worktime_tracker.cli.cli import start  # pylint: disable=import-outside-toplevel
     start()
 
 
@@ -54,7 +54,7 @@ def macos_main():
 
 def linux_main():
     raise NotImplementedError('Linux not supported yet')
-    start_pyqt_gui()  # TODO: There is no get_state() method yet
+    # start_pyqt_gui()  # TODO: There is no get_state() method yet
 
 
 def windows_main():
@@ -70,5 +70,5 @@ if __name__ == '__main__':
         main = windows_main
     else:
         raise NotImplementedError(f'OS {sys.platform} is not supported')
-    setup_spaces(get_space_id)
+    setup_spaces()
     main()

@@ -53,6 +53,6 @@ def seconds_to_human_readable(seconds):
 
 
 def yield_lines(filepath):
-    with open(filepath, 'r') as f:
+    with open(filepath, 'r', encoding='utf8') as f:
         for line in f:
             yield line.strip('\n')
