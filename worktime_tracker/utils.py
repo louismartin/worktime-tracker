@@ -12,7 +12,7 @@ LOGS_PATH.parent.mkdir(exist_ok=True)
 
 def reverse_read_lines(filename, buf_size=8192):
     '''a generator that returns the lines of a file in reverse order'''
-    with open(filename) as fh:
+    with open(filename, encoding="utf8") as fh:
         segment = None
         offset = 0
         fh.seek(0, os.SEEK_END)

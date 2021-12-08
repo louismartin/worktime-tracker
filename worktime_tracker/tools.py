@@ -6,11 +6,12 @@ import time
 import numpy as np
 import pandas as pd
 import plotly.express as px
-from tqdm import tqdm
+from worktime_tracker.constants import WORK_STATES
 
+from worktime_tracker.date_utils import get_current_day_start
 from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.worktime_tracker import get_work_time, WorktimeTracker
-from worktime_tracker.logs import rewrite_history, read_first_log, Log, Interval, get_all_logs
+from worktime_tracker.logs import rewrite_history, read_first_log, Log, get_all_logs, logs_to_intervals
 
 
 def rewrite_history_prompt():
@@ -63,7 +64,7 @@ def get_productivity_plot(start_timestamp, end_timestamp):
 
 def get_todays_productivity_plot():
     interval = 1 * 24 * 60 * 60
-    start_timestamp = WorktimeTracker.get_current_day_start()
+    start_timestamp = get_current_day_start()
     end_timestamp = min(start_timestamp + interval, time.time())
     return get_productivity_plot(start_timestamp, end_timestamp)
 
@@ -91,7 +92,7 @@ class Discretizer:
         return [self.first_timestamp + i * self.step for i in range(n_bins)]
 
     def add_interval(self, interval):
-        if interval.state not in WorktimeTracker.work_states:
+        if interval.state not in WORK_STATES:
             return
         assert self.first_timestamp <= interval.start_timestamp and interval.end_timestamp <= self.last_timestamp
         n_steps_since_start = (interval.start_timestamp - self.first_timestamp) // self.step
@@ -130,7 +131,7 @@ class Discretizer:
 @lru_cache()
 def get_hourly_worktime_df():
     logs = [Log(timestamp, state) for timestamp, state in get_all_logs()]
-    intervals = [Interval(start_log, end_log) for start_log, end_log in zip(logs, logs[1:])]
+    intervals = logs_to_intervals(logs)
     discretizer = Discretizer(step=3600)
     for interval in intervals:
         discretizer.add_interval(interval)

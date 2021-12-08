@@ -210,3 +210,7 @@ class Interval:
     def __repr__(self):
         start_str = self.start_datetime.strftime('%Y-%m-%d %H:%M:%S')
         return f'Interval<state:{self.state}, start:{start_str}, duration:{seconds_to_human_readable(self.duration)}>'
+
+
+def logs_to_intervals(logs):
+    return [Interval(start_log, end_log) for start_log, end_log in zip(logs, logs[1:])]
