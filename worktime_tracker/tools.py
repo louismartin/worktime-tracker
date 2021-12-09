@@ -16,12 +16,12 @@ from worktime_tracker.logs import rewrite_history, read_first_log, Log, get_all_
 
 def rewrite_history_prompt():
     now = datetime.now()
-    start = input('Start time? (hh:mm): ')
-    start_hour, start_minute = [int(x) for x in start.split(':')]
-    end = input('End time? (hh:mm): ')
-    end_hour, end_minute = [int(x) for x in end.split(':')]
-    day_offset = input('Day offset? (default=0): ')
-    day_offset = int(day_offset) if day_offset != '' else 0
+    start = input("Start time? (hh:mm): ")
+    start_hour, start_minute = [int(x) for x in start.split(":")]
+    end = input("End time? (hh:mm): ")
+    end_hour, end_minute = [int(x) for x in end.split(":")]
+    day_offset = input("Day offset? (default=0): ")
+    day_offset = int(day_offset) if day_offset != "" else 0
     start = (
         (now + timedelta(days=day_offset))
         .replace(hour=start_hour, minute=start_minute, second=0, microsecond=0)
@@ -32,14 +32,14 @@ def rewrite_history_prompt():
         .replace(hour=end_hour, minute=end_minute, second=0, microsecond=0)
         .timestamp()
     )
-    new_state = input('New state?: ')
+    new_state = input("New state?: ")
     rewrite_history(start, end, new_state)
 
 
 def get_productivity_plot(start_timestamp, end_timestamp):
     def format_timestamp(timestamp):
         d = datetime.fromtimestamp(timestamp)
-        return f'{d.hour}h{d.minute:02d}'
+        return f"{d.hour}h{d.minute:02d}"
 
     bin_size = 15 * 60
     n_bins = int((end_timestamp - start_timestamp) / bin_size)
@@ -51,21 +51,21 @@ def get_productivity_plot(start_timestamp, end_timestamp):
         table.append(
             {
                 # Very slow for old logs, would be better to use Discretizer
-                'work_time': get_work_time(bin_start, bin_end),
-                'bin_start': bin_start,
-                'bin_end': bin_end,
-                'formatted_start_time': format_timestamp(bin_start),
+                "work_time": get_work_time(bin_start, bin_end),
+                "bin_start": bin_start,
+                "bin_end": bin_end,
+                "formatted_start_time": format_timestamp(bin_start),
             }
         )
     total_work_time = get_work_time(start_timestamp, end_timestamp)
-    df = pd.DataFrame(table).sort_values('bin_start')
-    df['work_time_m'] = df['work_time'] / 60
+    df = pd.DataFrame(table).sort_values("bin_start")
+    df["work_time_m"] = df["work_time"] / 60
     fig = px.histogram(
         df,
-        x='formatted_start_time',
-        y='work_time_m',
-        histfunc='sum',
-        title=f'Total Work Time = {seconds_to_human_readable(total_work_time)}',
+        x="formatted_start_time",
+        y="work_time_m",
+        histfunc="sum",
+        title=f"Total Work Time = {seconds_to_human_readable(total_work_time)}",
     )
     return fig
 
@@ -77,7 +77,7 @@ def get_todays_productivity_plot():
     return get_productivity_plot(start_timestamp, end_timestamp)
 
 
-def download_productivity_plot(path='productivity_plot.png'):
+def download_productivity_plot(path="productivity_plot.png"):
     get_todays_productivity_plot().write_image(path)
     return path
 
@@ -120,17 +120,17 @@ class Discretizer:
             dt = datetime.fromtimestamp(timestamp)
             records.append(
                 {
-                    'work_time': work_time,
-                    'start_datetime': dt,
-                    'year': dt.year,
-                    'month': dt.month,
-                    'day': dt.day,
-                    'hour': dt.hour,
-                    'year_month': dt.strftime('Y:%y %b'),
-                    'year_week': dt.strftime('Y:%y w:%V'),
-                    'year_day': dt.strftime('Y:%y %b d:%d'),
-                    'formatted_date': dt.strftime('%Y-%m-%d'),
-                    'dow': dt.strftime('%A'),
+                    "work_time": work_time,
+                    "start_datetime": dt,
+                    "year": dt.year,
+                    "month": dt.month,
+                    "day": dt.day,
+                    "hour": dt.hour,
+                    "year_month": dt.strftime("Y:%y %b"),
+                    "year_week": dt.strftime("Y:%y w:%V"),
+                    "year_day": dt.strftime("Y:%y %b d:%d"),
+                    "formatted_date": dt.strftime("%Y-%m-%d"),
+                    "dow": dt.strftime("%A"),
                 }
             )
         return pd.DataFrame(records)
@@ -144,15 +144,15 @@ def get_hourly_worktime_df():
     for interval in intervals:
         discretizer.add_interval(interval)
     df_hourly = discretizer.to_df()
-    df_hourly['work_time'] /= 3600
+    df_hourly["work_time"] /= 3600
     return df_hourly
 
 
 def get_daily_worktime_df():
     df_hourly = get_hourly_worktime_df()
-    daily_columns = [col for col in df_hourly.columns if col not in ['hour', 'start_datetime', 'work_time']]
+    daily_columns = [col for col in df_hourly.columns if col not in ["hour", "start_datetime", "work_time"]]
     return (
-        df_hourly.groupby(daily_columns)['start_datetime', 'work_time']
-        .agg({'start_datetime': 'min', 'work_time': 'sum'})
+        df_hourly.groupby(daily_columns)["start_datetime", "work_time"]
+        .agg({"start_datetime": "min", "work_time": "sum"})
         .reset_index()
     )

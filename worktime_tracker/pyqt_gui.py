@@ -20,10 +20,9 @@ class WorktimeTrackerThread(QThread, WorktimeTracker):
 
 
 class Window(QLabel):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setWindowTitle('State Tracker')
+        self.setWindowTitle("State Tracker")
         self.set_geometry(n_lines=get_current_weekday() + 1, max_characters=20)
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.start_thread()
@@ -51,7 +50,7 @@ class Window(QLabel):
     @pyqtSlot()
     def update_text(self):
         lines = self.lines()
-        self.setText('\n'.join(lines))
+        self.setText("\n".join(lines))
         self.set_geometry(n_lines=len(lines), max_characters=max([len(line) for line in lines]))
 
 

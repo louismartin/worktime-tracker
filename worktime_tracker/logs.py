@@ -11,21 +11,21 @@ _ALL_LOGS = []
 
 
 def write_last_check(timestamp):
-    with LAST_CHECK_PATH.open('w') as f:
-        f.write(str(timestamp) + '\n')
+    with LAST_CHECK_PATH.open("w") as f:
+        f.write(str(timestamp) + "\n")
 
 
 def read_last_check_timestamp():
     if not LAST_CHECK_PATH.exists():
-        with open(LAST_CHECK_PATH, 'w', encoding='utf8') as f:
-            f.write('0\n')
-    with LAST_CHECK_PATH.open('r') as f:
+        with open(LAST_CHECK_PATH, "w", encoding="utf8") as f:
+            f.write("0\n")
+    with LAST_CHECK_PATH.open("r") as f:
         return float(f.readline().strip())
 
 
 def write_log(timestamp, state):
-    with LOGS_PATH.open('a') as f:
-        f.write(f'{timestamp}\t{state}\n')
+    with LOGS_PATH.open("a") as f:
+        f.write(f"{timestamp}\t{state}\n")
 
 
 def maybe_write_log(timestamp, state):
@@ -37,21 +37,21 @@ def maybe_write_log(timestamp, state):
 
 
 def parse_log_line(log_line):
-    timestamp, state = log_line.strip().split('\t')
+    timestamp, state = log_line.strip().split("\t")
     return Log(timestamp=float(timestamp), state=state)
 
 
 def reverse_read_logs():
     if not LOGS_PATH.exists():
         LOGS_PATH.parent.mkdir(exist_ok=True)
-        write_log(timestamp=0, state='locked')
+        write_log(timestamp=0, state="locked")
     for line in reverse_read_lines(LOGS_PATH):
         yield parse_log_line(line)
 
 
 def get_all_logs():
     # We don't reload all logs each time, just the new ones
-    last_log = Log(timestamp=0, state='locked')
+    last_log = Log(timestamp=0, state="locked")
     if len(_ALL_LOGS) > 0:
         last_log = _ALL_LOGS[-1]  # Last loaded log
     new_logs = []
@@ -66,7 +66,9 @@ def get_all_logs():
 
 def get_logs(start_datetime, end_datetime):
     end_datetime = min(end_datetime, datetime.now())
-    logs = [Log(end_datetime.timestamp(), 'locked')]  # Add a virtual state at the end of the logs to count the last state
+    logs = [
+        Log(end_datetime.timestamp(), "locked")
+    ]  # Add a virtual state at the end of the logs to count the last state
     for log in get_all_logs()[::-1]:  # Read the logs backward
         if log.datetime > end_datetime:
             continue
@@ -92,7 +94,7 @@ def read_last_log():
 
 
 def read_first_log():
-    with open(LOGS_PATH, 'r', encoding='utf8') as f:
+    with open(LOGS_PATH, "r", encoding="utf8") as f:
         try:
             first_line = next(f)
         except StopIteration:
@@ -102,13 +104,11 @@ def read_first_log():
 
 def get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs):
     logs = [(log.timestamp, log.state) for log in logs]  # TODO: adapt function to use the Log class
-    assert end_timestamp < logs[-1][0], 'Rewriting the future not allowed'
+    assert end_timestamp < logs[-1][0], "Rewriting the future not allowed"
     # Remove logs that are in the interval to be rewritten
     logs_before = [(timestamp, state) for (timestamp, state) in logs if timestamp <= start_timestamp]
     logs_after = [(timestamp, state) for (timestamp, state) in logs if timestamp > end_timestamp]
-    logs_inside = [
-        (timestamp, state) for (timestamp, state) in logs if (start_timestamp < timestamp <= end_timestamp)
-    ]
+    logs_inside = [(timestamp, state) for (timestamp, state) in logs if (start_timestamp < timestamp <= end_timestamp)]
     if len(logs_inside) > 0:
         # Push back last log inside to be the first of logs after (the rewritten history needs to end on the same
         # state as it was actually recorded)
@@ -129,20 +129,20 @@ def get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs):
 
 def rewrite_history(start_timestamp, end_timestamp, new_state):
     # Careful, this methods rewrites the entire log file
-    shutil.copy(LOGS_PATH, f'{LOGS_PATH}.bck{int(time.time())}')
+    shutil.copy(LOGS_PATH, f"{LOGS_PATH}.bck{int(time.time())}")
     logs = get_all_logs()
     # TODO: Rewrite the function to use the Log class
     new_logs = get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs)
-    with LOGS_PATH.open('w') as f:
+    with LOGS_PATH.open("w") as f:
         for timestamp, state in new_logs:
-            f.write(f'{timestamp}\t{state}\n')
+            f.write(f"{timestamp}\t{state}\n")
     _ALL_LOGS[:] = []  # Reset logs
 
 
 def remove_identical_consecutive_states(logs):
-    '''Cleans identical consecutive logs which should not change the resulting worktime.
+    """Cleans identical consecutive logs which should not change the resulting worktime.
 
-    Should be used to clean the log file.'''
+    Should be used to clean the log file."""
     previous_state = None
     new_logs = []
     for timestamp, state in logs:
@@ -164,8 +164,8 @@ class Log:
         return datetime.fromtimestamp(self.timestamp)
 
     def __repr__(self):
-        date_str = self.datetime.strftime('%Y-%m-%d %H:%M:%S')
-        return f'Log<date={date_str}, state={self.state}>'
+        date_str = self.datetime.strftime("%Y-%m-%d %H:%M:%S")
+        return f"Log<date={date_str}, state={self.state}>"
 
     def __eq__(self, other):
         return self.timestamp == other.timestamp and self.state == other.state
@@ -227,8 +227,8 @@ class Interval:
         return Interval(self.start_log, split_log), Interval(split_log, self.end_log)
 
     def __repr__(self):
-        start_str = self.start_datetime.strftime('%Y-%m-%d %H:%M:%S')
-        return f'Interval<state:{self.state}, start:{start_str}, duration:{seconds_to_human_readable(self.duration)}>'
+        start_str = self.start_datetime.strftime("%Y-%m-%d %H:%M:%S")
+        return f"Interval<state:{self.state}, start:{start_str}, duration:{seconds_to_human_readable(self.duration)}>"
 
 
 def convert_logs_to_intervals(logs):

@@ -4,13 +4,13 @@ from worktime_tracker.constants import DAY_START_HOUR
 
 
 WEEKDAYS = [
-    'Sunday',
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
 ]
 
 
@@ -44,7 +44,7 @@ def get_current_day_end():
 
 def get_current_weekday():
     # Add +2 to start the week on saturday
-    return ((datetime.now() - timedelta(hours=DAY_START_HOUR)).weekday() + WEEKDAYS.index('Monday')) % 7
+    return ((datetime.now() - timedelta(hours=DAY_START_HOUR)).weekday() + WEEKDAYS.index("Monday")) % 7
 
 
 def get_week_start():
@@ -64,7 +64,7 @@ def get_timestamp_weekday(timestamp):
 
 def get_weekday_start_and_end(weekday):
     current_weekday = get_current_weekday()
-    assert weekday <= current_weekday, 'Cannot query future weekday'
+    assert weekday <= current_weekday, "Cannot query future weekday"
     day_offset = current_weekday - weekday
     weekday_start = get_current_day_start() - timedelta(days=day_offset)
     weekday_end = get_current_day_end() - timedelta(days=day_offset)
