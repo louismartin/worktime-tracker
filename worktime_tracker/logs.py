@@ -2,7 +2,9 @@ from datetime import datetime
 import time
 import shutil
 
+from worktime_tracker.constants import WORK_STATES
 from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, reverse_read_lines, seconds_to_human_readable
+from worktime_tracker.date_utils import coerce_to_timestamp
 
 
 _ALL_LOGS = []
@@ -28,15 +30,15 @@ def write_log(timestamp, state):
 
 def maybe_write_log(timestamp, state):
     # TODO: lock file
-    _, last_state = read_last_log()
-    if last_state == state:
+    last_log = read_last_log()
+    if last_log.state == state:
         return
     write_log(timestamp, state)
 
 
 def parse_log_line(log_line):
     timestamp, state = log_line.strip().split('\t')
-    return float(timestamp), state
+    return Log(timestamp=float(timestamp), state=state)
 
 
 def reverse_read_logs():
@@ -49,30 +51,37 @@ def reverse_read_logs():
 
 def get_all_logs():
     # We don't reload all logs each time, just the new ones
-    last_timestamp = 0
+    last_log = Log(timestamp=0, state='locked')
     if len(_ALL_LOGS) > 0:
-        last_timestamp, _ = _ALL_LOGS[-1]  # Last loaded log
+        last_log = _ALL_LOGS[-1]  # Last loaded log
     new_logs = []
     # Read file in reverse to find new logs that are not loaded yet
-    for timestamp, state in reverse_read_logs():
-        if timestamp <= last_timestamp:
+    for log in reverse_read_logs():
+        if log <= last_log:
             break
-        new_logs.append((timestamp, state))
+        new_logs.append(log)
     _ALL_LOGS.extend(new_logs[::-1])
     return _ALL_LOGS.copy()
 
 
-def get_logs(start_timestamp, end_timestamp):
-    end_timestamp = min(end_timestamp, time.time())
-    logs = [(end_timestamp, 'locked')]  # Add a virtual state at the end of the logs to count the last state
-    for timestamp, state in get_all_logs()[::-1]:  # Read the logs backward
-        if timestamp > end_timestamp:
+def get_logs(start_datetime, end_datetime):
+    end_datetime = min(end_datetime, datetime.now())
+    logs = [Log(end_datetime.timestamp(), 'locked')]  # Add a virtual state at the end of the logs to count the last state
+    for log in get_all_logs()[::-1]:  # Read the logs backward
+        if log.datetime > end_datetime:
             continue
-        if timestamp < start_timestamp:
-            logs.append((start_timestamp, state))  # The first log will be dated at the start timestamp queried
+        if log.datetime <= start_datetime:
+            # The first log will be dated at the start timestamp queried
+            # Create a new log to prevent mutating the global logs
+            log = Log(timestamp=start_datetime.timestamp(), state=log.state)
             break
-        logs.append((timestamp, state))
+        logs.append(log)
     return logs[::-1]  # Order the list back to original because we have read the logs backward
+
+
+def get_intervals(start_datetime, end_datetime):
+    logs = get_logs(start_datetime, end_datetime)
+    return convert_logs_to_intervals(logs)
 
 
 def read_last_log():
@@ -92,6 +101,7 @@ def read_first_log():
 
 
 def get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs):
+    logs = [(log.timestamp, log.state) for log in logs]  # TODO: adapt function to use the Log class
     assert end_timestamp < logs[-1][0], 'Rewriting the future not allowed'
     # Remove logs that are in the interval to be rewritten
     logs_before = [(timestamp, state) for (timestamp, state) in logs if timestamp <= start_timestamp]
@@ -120,8 +130,8 @@ def get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs):
 def rewrite_history(start_timestamp, end_timestamp, new_state):
     # Careful, this methods rewrites the entire log file
     shutil.copy(LOGS_PATH, f'{LOGS_PATH}.bck{int(time.time())}')
-    with LOGS_PATH.open('r') as f:
-        logs = get_logs(start_timestamp=0, end_timestamp=time.time())
+    logs = get_all_logs()
+    # TODO: Rewrite the function to use the Log class
     new_logs = get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs)
     with LOGS_PATH.open('w') as f:
         for timestamp, state in new_logs:
@@ -144,9 +154,9 @@ def remove_identical_consecutive_states(logs):
 
 
 class Log:
-    # TODO: This log abstraction is not used yet, but it should replace using (timestamp, state) tuples
+    # TODO: This log abstraction aims at replacing (timestamp, state) tuples
     def __init__(self, timestamp, state):
-        self.timestamp = timestamp
+        self.timestamp = coerce_to_timestamp(timestamp)
         self.state = state
 
     @property
@@ -154,7 +164,8 @@ class Log:
         return datetime.fromtimestamp(self.timestamp)
 
     def __repr__(self):
-        return f'Log<date={self.timestamp}, state={self.state}>'
+        date_str = self.datetime.strftime('%Y-%m-%d %H:%M:%S')
+        return f'Log<date={date_str}, state={self.state}>'
 
     def __eq__(self, other):
         return self.timestamp == other.timestamp and self.state == other.state
@@ -183,6 +194,10 @@ class Interval:
         return self.start_log.state
 
     @property
+    def is_work_interval(self):
+        return self.state in WORK_STATES
+
+    @property
     def start_datetime(self):
         return self.start_log.datetime
 
@@ -202,9 +217,13 @@ class Interval:
     def duration(self):
         return self.end_timestamp - self.start_timestamp
 
+    @property
+    def work_time(self):
+        return self.duration if self.is_work_interval else 0
+
     def split(self, timestamp):
         split_log = Log(timestamp, self.state)
-        assert self.start_log < split_log < self.end_log
+        assert self.start_log <= split_log <= self.end_log
         return Interval(self.start_log, split_log), Interval(split_log, self.end_log)
 
     def __repr__(self):
@@ -212,5 +231,5 @@ class Interval:
         return f'Interval<state:{self.state}, start:{start_str}, duration:{seconds_to_human_readable(self.duration)}>'
 
 
-def logs_to_intervals(logs):
+def convert_logs_to_intervals(logs):
     return [Interval(start_log, end_log) for start_log, end_log in zip(logs, logs[1:])]

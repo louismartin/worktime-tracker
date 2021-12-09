@@ -14,24 +14,32 @@ WEEKDAYS = [
 ]
 
 
+def coerce_to_datetime(datetime_like):
+    if isinstance(datetime_like, datetime):
+        return datetime_like
+    return datetime.fromtimestamp(datetime_like)
+
+
+def coerce_to_timestamp(timestamp_like):
+    if isinstance(timestamp_like, int) or isinstance(timestamp_like, float):
+        return timestamp_like
+    return timestamp_like.timestamp()
+
+
 def get_day_start(dt):
-    return (
-        (dt - timedelta(hours=DAY_START_HOUR))
-        .replace(hour=DAY_START_HOUR, minute=0, second=0, microsecond=0)
-        .timestamp()
-    )
+    return (dt - timedelta(hours=DAY_START_HOUR)).replace(hour=DAY_START_HOUR, minute=0, second=0, microsecond=0)
+
+
+def get_day_end(dt):
+    return get_day_start(dt) + timedelta(days=1)
 
 
 def get_current_day_start():
-    return (
-        (datetime.now() - timedelta(hours=DAY_START_HOUR))
-        .replace(hour=DAY_START_HOUR, minute=0, second=0, microsecond=0)
-        .timestamp()
-    )
+    return get_day_start(datetime.now())
 
 
 def get_current_day_end():
-    return get_current_day_start() + timedelta(days=1).total_seconds()
+    return get_day_end(datetime.now())
 
 
 def get_current_weekday():
@@ -58,6 +66,6 @@ def get_weekday_start_and_end(weekday):
     current_weekday = get_current_weekday()
     assert weekday <= current_weekday, 'Cannot query future weekday'
     day_offset = current_weekday - weekday
-    weekday_start = get_current_day_start() - timedelta(days=day_offset).total_seconds()
-    weekday_end = get_current_day_end() - timedelta(days=day_offset).total_seconds()
+    weekday_start = get_current_day_start() - timedelta(days=day_offset)
+    weekday_end = get_current_day_end() - timedelta(days=day_offset)
     return weekday_start, weekday_end

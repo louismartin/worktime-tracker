@@ -11,7 +11,7 @@ from worktime_tracker.constants import WORK_STATES
 from worktime_tracker.date_utils import get_current_day_start
 from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.worktime_tracker import get_work_time
-from worktime_tracker.logs import rewrite_history, read_first_log, Log, get_all_logs, logs_to_intervals
+from worktime_tracker.logs import rewrite_history, read_first_log, Log, get_all_logs, convert_logs_to_intervals
 
 
 def rewrite_history_prompt():
@@ -72,7 +72,7 @@ def get_productivity_plot(start_timestamp, end_timestamp):
 
 def get_todays_productivity_plot():
     interval = 1 * 24 * 60 * 60
-    start_timestamp = get_current_day_start()
+    start_timestamp = get_current_day_start().timestamp
     end_timestamp = min(start_timestamp + interval, time.time())
     return get_productivity_plot(start_timestamp, end_timestamp)
 
@@ -139,7 +139,7 @@ class Discretizer:
 @lru_cache()
 def get_hourly_worktime_df():
     logs = [Log(timestamp, state) for timestamp, state in get_all_logs()]
-    intervals = logs_to_intervals(logs)
+    intervals = convert_logs_to_intervals(logs)
     discretizer = Discretizer(step=3600)
     for interval in intervals:
         discretizer.add_interval(interval)

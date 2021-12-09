@@ -6,6 +6,7 @@ import subprocess
 from tqdm import tqdm
 
 from worktime_tracker.worktime_tracker import WorktimeTracker
+from worktime_tracker.date_utils import get_current_weekday
 from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.tools import rewrite_history_prompt, download_productivity_plot
 
@@ -46,7 +47,7 @@ def start():
             # Update menu with new times
             menu = lines[1:][::-1]  # Sort days in chronological order
             work_ratio_last_period = worktime_tracker.get_work_ratio_since_timestamp(time.time() - 3600/2)
-            work_time_today = worktime_tracker.get_work_time_from_weekday(worktime_tracker.get_current_weekday())
+            work_time_today = worktime_tracker.get_work_time_from_weekday(get_current_weekday())
             title = f'{int(100 * work_ratio_last_period)}% - {seconds_to_human_readable(work_time_today)}'
             print(' - '.join([title] + menu) + '\r', end='')
             time.sleep(30)
