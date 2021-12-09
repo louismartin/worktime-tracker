@@ -65,6 +65,7 @@ def get_all_logs():
 
 
 def get_logs(start_datetime, end_datetime):
+    # TODO: Merge with get_intervals_between
     end_datetime = min(end_datetime, datetime.now())
     logs = [
         Log(end_datetime.timestamp(), "locked")
@@ -84,6 +85,22 @@ def get_logs(start_datetime, end_datetime):
 def get_intervals(start_datetime, end_datetime):
     logs = get_logs(start_datetime, end_datetime)
     return convert_logs_to_intervals(logs)
+
+
+def get_intervals_between(intervals, start_datetime, end_datetime):
+    """Get intervals between start_datetime and end_datetime"""
+    assert start_datetime <= end_datetime
+    intervals_between = []
+    for interval in intervals:
+        if interval.end_datetime < start_datetime or end_datetime < interval.start_datetime:
+            # Discard intervals that doe not overlap with the range
+            continue
+        if interval.start_datetime < start_datetime:
+            _, interval = interval.split(start_datetime)
+        if end_datetime < interval.end_datetime:
+            interval, _ = interval.split(end_datetime)
+        intervals_between.append(interval)
+    return intervals_between
 
 
 def read_last_log():
@@ -108,7 +125,7 @@ def get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs):
     # Remove logs that are in the interval to be rewritten
     logs_before = [(timestamp, state) for (timestamp, state) in logs if timestamp <= start_timestamp]
     logs_after = [(timestamp, state) for (timestamp, state) in logs if timestamp > end_timestamp]
-    logs_inside = [(timestamp, state) for (timestamp, state) in logs if (start_timestamp < timestamp <= end_timestamp)]
+    logs_inside = [(timestamp, state) for (timestamp, state) in logs if start_timestamp < timestamp <= end_timestamp]
     if len(logs_inside) > 0:
         # Push back last log inside to be the first of logs after (the rewritten history needs to end on the same
         # state as it was actually recorded)

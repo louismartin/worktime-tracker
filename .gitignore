@@ -1,5 +1,6 @@
 *.pyc
 *.swp
+*.ipynb
 .venv
 .logs/*
 last_check.txt

@@ -29,3 +29,6 @@ Run with:
 ```bash
 python main.py
 ```
+
+
+TODO: Add screenshot of plots

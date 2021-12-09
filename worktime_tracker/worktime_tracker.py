@@ -1,17 +1,25 @@
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, time as datetime_time  # Avoid confusion between time and datetime
 import time
 
 from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.spaces import get_state
 from worktime_tracker.constants import WORK_STATES
-from worktime_tracker.date_utils import get_weekday_start_and_end, WEEKDAYS, get_current_weekday, coerce_to_datetime
+from worktime_tracker.date_utils import (
+    get_weekday_start_and_end,
+    WEEKDAYS,
+    get_current_weekday,
+    coerce_to_datetime,
+    get_day_start,
+    get_day_end,
+)
 from worktime_tracker.logs import (
     get_intervals,
     read_last_log,
     maybe_write_log,
     write_last_check,
     read_last_check_timestamp,
+    get_intervals_between,
 )
 
 
@@ -98,6 +106,7 @@ class WorktimeTracker:
         self.maybe_append_and_write_log(timestamp, state)
         return state != last_log.state
 
+
     def lines(self):
         """Nicely formatted lines for displaying to the user"""
 
@@ -118,3 +127,75 @@ class WorktimeTracker:
         lines = [weekday_text(weekday_idx) for weekday_idx in range(get_current_weekday() + 1)][::-1]
         lines += [total_worktime_text()]
         return lines
+
+
+class Day:
+    """Class that regroups intervals of a day"""
+
+    def __init__(self, intervals) -> None:
+        self.intervals = intervals
+        self.day_start = get_day_start(intervals[0].start_datetime)
+        self.day_end = get_day_end(intervals[0].end_datetime)
+        assert [get_day_start(interval.start_datetime) == self.day_start for interval in intervals]
+        assert [get_day_end(interval.end_datetime) == self.day_end for interval in intervals]
+
+    @property
+    def work_intervals(self):
+        return [interval for interval in self.intervals if interval.is_work_interval]
+
+    def get_work_time_at(self, dt_time):
+        assert isinstance(dt_time, datetime_time)
+        dt = datetime.combine(self.day_start, dt_time)
+        assert self.day_start <= dt
+        intervals_before_dt = get_intervals_between(self.work_intervals, self.day_start, dt)
+        return sum([interval.work_time for interval in intervals_before_dt])
+
+    @property
+    def work_time(self):
+        return sum([interval.work_time for interval in self.work_intervals])
+
+    def is_week_day(self):
+        return self.day_start.weekday() < 5
+
+    def is_work_day(self):
+        # TODO: Maybe use weekdays as well
+        return self.is_week_day() and self.work_time > 4 * 3600
+
+
+def split_interval_by_day(interval):
+    """Split intervals that spans multiple days into multiple intervals or return [interval] if it's not needed
+
+    args: interval
+    return: list of intervals
+    """
+    day_end = get_day_end(interval.start_datetime)
+    if interval.end_datetime < day_end:
+        return [interval]
+    interval_in_day, interval_after_day = interval.split(day_end)
+    return [interval_in_day] + split_interval_by_day(interval_after_day)
+
+
+def split_intervals_by_day(intervals):
+    return [split_interval for interval in intervals for split_interval in split_interval_by_day(interval)]
+
+
+def group_intervals_by_day(intervals):
+    """Group intervals by day
+
+    args: intervals
+    return: list of Day objects
+    """
+    intervals = split_intervals_by_day(intervals)  # split intervals that span multiple days
+    days_dict = defaultdict(list)
+    for interval in intervals:
+        days_dict[get_day_start(interval.start_datetime)].append(interval)
+    return [Day(intervals) for intervals in days_dict.values()]
+
+
+def get_average_work_time_at(days, dt_time):
+    work_times_at = []
+    for day in days:
+        if not day.is_work_day():
+            continue
+        work_times_at.append(day.get_work_time_at(dt_time))
+    return sum(work_times_at) / len(work_times_at)

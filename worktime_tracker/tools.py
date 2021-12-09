@@ -8,10 +8,11 @@ import pandas as pd
 import plotly.express as px
 from worktime_tracker.constants import WORK_STATES
 
-from worktime_tracker.date_utils import get_current_day_start
+from worktime_tracker.date_utils import get_current_day_start, get_current_weekday
 from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.worktime_tracker import get_work_time
 from worktime_tracker.logs import rewrite_history, read_first_log, Log, get_all_logs, convert_logs_to_intervals
+from worktime_tracker.worktime_tracker import WorktimeTracker, get_average_work_time_at, group_intervals_by_day
 
 
 def rewrite_history_prompt():
@@ -156,3 +157,32 @@ def get_daily_worktime_df():
         .agg({"start_datetime": "min", "work_time": "sum"})
         .reset_index()
     )
+
+@lru_cache()
+def get_days():
+    # TODO: This function can be misleading as it does not update
+    logs = get_all_logs()
+    intervals = convert_logs_to_intervals(logs)
+    return group_intervals_by_day(intervals)
+
+
+def create_ghost_plot(your_position, ghost_position, length=100):
+    def add_icon_on_plot(plot, icon, position):
+        assert 0 <= position <= 1
+        position_idx = int(position * len(plot))
+        plot_as_list = list(plot)  # Use list because strings don't support item assignment
+        return ''.join(plot_as_list[:position_idx-len(icon)] + list(icon) + plot_as_list[position_idx:])
+    plot = '-' * length
+    plot = add_icon_on_plot(plot=plot, icon='[Ghost]', position=ghost_position)
+    plot = add_icon_on_plot(plot=plot, icon='[You]', position=your_position)
+    return f'[{plot}]'
+
+
+def get_ghost_plot(length=100):
+    days = get_days()
+    target = WorktimeTracker.targets[get_current_weekday()]
+    ghost_work_time = get_average_work_time_at(days, datetime.now().time())
+    ghost_position = ghost_work_time / target
+    your_worktime = WorktimeTracker.get_work_time_from_weekday(get_current_weekday())
+    your_position = your_worktime / target
+    return create_ghost_plot(your_position=your_position, ghost_position=ghost_position, length=length)

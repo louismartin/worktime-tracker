@@ -6,9 +6,9 @@ import subprocess
 from tqdm import tqdm
 
 from worktime_tracker.worktime_tracker import WorktimeTracker
-from worktime_tracker.date_utils import get_current_weekday
 from worktime_tracker.utils import seconds_to_human_readable
-from worktime_tracker.tools import rewrite_history_prompt, download_productivity_plot
+from worktime_tracker.date_utils import get_current_weekday
+from worktime_tracker.tools import get_ghost_plot, rewrite_history_prompt, download_productivity_plot
 
 
 def parse_time(time_str):
@@ -27,14 +27,14 @@ def pause():
     duration = parse_time(input("Enter a duration to pause during a certain time (e.g. 2h30).\nDuration: "))
     if duration is not None:
         print(f"Pausing for {duration}.")
-        for i in tqdm(range(duration.seconds)):
+        for _ in tqdm(range(duration.seconds)):
             time.sleep(1)
 
 
 def plot_productivity():
     productivity_plot_path = download_productivity_plot()
     # TODO: Only works on macos for now
-    subprocess.run(["open", productivity_plot_path])
+    subprocess.run(["open", productivity_plot_path], check=True)
 
 
 def start():
@@ -49,7 +49,7 @@ def start():
             work_ratio_last_period = worktime_tracker.get_work_ratio_since_timestamp(time.time() - 3600 / 2)
             work_time_today = worktime_tracker.get_work_time_from_weekday(get_current_weekday())
             title = f"{int(100 * work_ratio_last_period)}% - {seconds_to_human_readable(work_time_today)}"
-            print(" - ".join([title] + menu) + "\r", end="")
+            print(" - ".join([get_ghost_plot(length=50), title] + menu) + "\r", end="")
             time.sleep(30)
         except KeyboardInterrupt:
             options_to_methods = {
