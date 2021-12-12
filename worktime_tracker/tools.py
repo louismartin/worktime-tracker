@@ -85,7 +85,7 @@ def download_productivity_plot(path="productivity_plot.png"):
 
 class Discretizer:
     def __init__(self, step, add_empty_bins=True):
-        first_log = Log(*read_first_log())
+        first_log = read_first_log()
         first_datetime = first_log.datetime.replace(minute=0, second=0, microsecond=0)
         last_datetime = (datetime.now() + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
         self.first_timestamp = first_datetime.timestamp()
@@ -139,7 +139,7 @@ class Discretizer:
 
 @lru_cache()
 def get_hourly_worktime_df():
-    logs = [Log(timestamp, state) for timestamp, state in get_all_logs()]
+    logs = get_all_logs()
     intervals = convert_logs_to_intervals(logs)
     discretizer = Discretizer(step=3600)
     for interval in intervals:
@@ -181,6 +181,8 @@ def create_ghost_plot(your_position, ghost_position, length=100):
 def get_ghost_plot(length=100):
     days = get_days()
     target = WorktimeTracker.targets[get_current_weekday()]
+    if target == 0:
+        return ""
     ghost_work_time = get_average_work_time_at(days, datetime.now().time())
     ghost_position = ghost_work_time / target
     your_worktime = WorktimeTracker.get_work_time_from_weekday(get_current_weekday())
