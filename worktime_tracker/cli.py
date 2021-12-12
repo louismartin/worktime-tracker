@@ -1,26 +1,11 @@
 import time
-import datetime
-import re
-import subprocess
 
 from tqdm import tqdm
 
 from worktime_tracker.worktime_tracker import WorktimeTracker
 from worktime_tracker.utils import seconds_to_human_readable
-from worktime_tracker.date_utils import get_current_weekday
-from worktime_tracker.tools import get_ghost_plot, rewrite_history_prompt, download_productivity_plot
-
-
-def parse_time(time_str):
-    parts = re.match(r"((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?", time_str)
-    if not parts:
-        return
-    parts = parts.groupdict()
-    time_params = {}
-    for name, param in parts.items():
-        if param:
-            time_params[name] = int(param)
-    return datetime.timedelta(**time_params)
+from worktime_tracker.date_utils import get_current_weekday, parse_time
+from worktime_tracker.tools import get_ghost_plot, rewrite_history_prompt, plot_productivity
 
 
 def pause():
@@ -29,12 +14,6 @@ def pause():
         print(f"Pausing for {duration}.")
         for _ in tqdm(range(duration.seconds)):
             time.sleep(1)
-
-
-def plot_productivity():
-    productivity_plot_path = download_productivity_plot()
-    # TODO: Only works on macos for now
-    subprocess.run(["open", productivity_plot_path], check=True)
 
 
 def start():
@@ -48,8 +27,8 @@ def start():
             menu = lines[1:][::-1]  # Sort days in chronological order
             work_ratio_last_period = worktime_tracker.get_work_ratio_since_timestamp(time.time() - 3600 / 2)
             work_time_today = worktime_tracker.get_work_time_from_weekday(get_current_weekday())
-            title = f"{int(100 * work_ratio_last_period)}% - {seconds_to_human_readable(work_time_today)}"
-            print(" - ".join([get_ghost_plot(length=50), title] + menu) + "\r", end="")
+            today = f"{int(100 * work_ratio_last_period)}% - {seconds_to_human_readable(work_time_today)}"
+            print(" - ".join([get_ghost_plot(length=50), today] + menu) + "\r", end="")
             time.sleep(30)
         except KeyboardInterrupt:
             options_to_methods = {

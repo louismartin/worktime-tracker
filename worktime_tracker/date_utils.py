@@ -1,5 +1,7 @@
 import time
+import re
 from datetime import datetime, timedelta
+
 from worktime_tracker.constants import DAY_START_HOUR
 
 
@@ -69,3 +71,15 @@ def get_weekday_start_and_end(weekday):
     weekday_start = get_current_day_start() - timedelta(days=day_offset)
     weekday_end = get_current_day_end() - timedelta(days=day_offset)
     return weekday_start, weekday_end
+
+
+def parse_time(time_str):
+    parts = re.match(r"((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?", time_str)
+    if not parts:
+        return None
+    parts = parts.groupdict()
+    time_params = {}
+    for name, param in parts.items():
+        if param:
+            time_params[name] = int(param)
+    return datetime.timedelta(**time_params)

@@ -3,6 +3,8 @@ import sys
 import time
 import json
 
+# Need to import curses before importing Quartz https://stackoverflow.com/questions/70327852/bug-when-importing-quartz-before-curses
+import curses
 from worktime_tracker.spaces import get_space_id
 from worktime_tracker.utils import SPACE_TYPES_PATH
 
@@ -48,6 +50,12 @@ def start_pyqt_gui():
 
 def start_cli():
     from worktime_tracker.cli import start  # pylint: disable=import-outside-toplevel
+
+    start()
+
+
+def start_cli_curses():
+    from worktime_tracker.cli_curses import start  # pylint: disable=import-outside-toplevel
 
     start()
 
