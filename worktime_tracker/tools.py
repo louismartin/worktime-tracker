@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from functools import lru_cache
 import time
+import subprocess
 
 import numpy as np
 import pandas as pd
@@ -83,6 +84,12 @@ def download_productivity_plot(path="productivity_plot.png"):
     return path
 
 
+def plot_productivity():
+    productivity_plot_path = download_productivity_plot()
+    # TODO: Only works on macos for now
+    subprocess.run(["open", productivity_plot_path], check=True)
+
+
 class Discretizer:
     def __init__(self, step, add_empty_bins=True):
         first_log = read_first_log()
@@ -158,6 +165,7 @@ def get_daily_worktime_df():
         .reset_index()
     )
 
+
 @lru_cache()
 def get_days():
     # TODO: This function can be misleading as it does not update
@@ -171,7 +179,8 @@ def create_ghost_plot(your_position, ghost_position, length=100):
         assert 0 <= position <= 1
         position_idx = int(position * len(plot))
         plot_as_list = list(plot)  # Use list because strings don't support item assignment
-        return ''.join(plot_as_list[:position_idx-len(icon)] + list(icon) + plot_as_list[position_idx:])
+        return ''.join(plot_as_list[: position_idx - len(icon)] + list(icon) + plot_as_list[position_idx:])
+
     plot = '-' * length
     plot = add_icon_on_plot(plot=plot, icon='[Ghost]', position=ghost_position)
     plot = add_icon_on_plot(plot=plot, icon='[You]', position=your_position)
