@@ -47,7 +47,7 @@ def start_pyqt_gui():
 
 
 def start_cli():
-    from worktime_tracker.cli.cli import start  # pylint: disable=import-outside-toplevel
+    from worktime_tracker.cli import start  # pylint: disable=import-outside-toplevel
 
     start()
 
