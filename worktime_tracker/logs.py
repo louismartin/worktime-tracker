@@ -64,7 +64,7 @@ def get_all_logs():
     return _ALL_LOGS.copy()
 
 
-def get_logs(start_datetime, end_datetime):
+def get_logs(start_datetime: datetime, end_datetime: datetime):
     # TODO: Merge with get_intervals_between
     end_datetime = min(end_datetime, datetime.now())
     logs = [
@@ -82,7 +82,7 @@ def get_logs(start_datetime, end_datetime):
     return logs[::-1]  # Order the list back to original because we have read the logs backward
 
 
-def get_intervals(start_datetime, end_datetime):
+def get_intervals(start_datetime: datetime, end_datetime: datetime):
     logs = get_logs(start_datetime, end_datetime)
     return convert_logs_to_intervals(logs)
 

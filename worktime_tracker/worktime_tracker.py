@@ -23,7 +23,7 @@ from worktime_tracker.logs import (
 )
 
 
-def get_cum_times_per_state(start_datetime, end_datetime):
+def get_cum_times_per_state(start_datetime: datetime, end_datetime: datetime):
     assert start_datetime < end_datetime
     intervals = get_intervals(start_datetime, end_datetime)
     cum_times_per_state = defaultdict(float)
@@ -32,7 +32,7 @@ def get_cum_times_per_state(start_datetime, end_datetime):
     return cum_times_per_state
 
 
-def get_work_time(start_datetime, end_datetime):
+def get_work_time(start_datetime: datetime, end_datetime: datetime):
     cum_times = get_cum_times_per_state(start_datetime, end_datetime)
     return sum(cum_times[state] for state in WORK_STATES)
 
@@ -106,27 +106,28 @@ class WorktimeTracker:
         self.maybe_append_and_write_log(timestamp, state)
         return state != last_log.state
 
+    def get_weekday_summary(self, weekday_idx):
+        weekday = WEEKDAYS[weekday_idx]
+        work_time = self.get_work_time_from_weekday(weekday_idx)
+        target = WorktimeTracker.targets[weekday_idx]
+        ratio = work_time / target if target != 0 else 1
+        return f"{weekday[:3]}: {int(100 * ratio)}% ({seconds_to_human_readable(work_time)})"
 
-    def lines(self):
-        """Nicely formatted lines for displaying to the user"""
+    def get_week_overtime_summary(self):
+        work_time = sum([self.get_work_time_from_weekday(weekday_idx) for weekday_idx in range(get_current_weekday())])
+        target = sum([WorktimeTracker.targets[weekday_idx] for weekday_idx in range(get_current_weekday())])
+        return f"Week overtime: {seconds_to_human_readable(work_time - target)}"
 
-        def weekday_text(weekday_idx):
-            weekday = WEEKDAYS[weekday_idx]
-            work_time = self.get_work_time_from_weekday(weekday_idx)
-            target = WorktimeTracker.targets[weekday_idx]
-            ratio = work_time / target if target != 0 else 1
-            return f"{weekday[:3]}: {int(100 * ratio)}% ({seconds_to_human_readable(work_time)})"
+    def get_instant_summary(self):
+        work_ratio_last_period = self.get_work_ratio_since_timestamp(time.time() - 3600 / 2)
+        work_time_today = self.get_work_time_from_weekday(get_current_weekday())
+        return f"{int(100 * work_ratio_last_period)}% - {seconds_to_human_readable(work_time_today)}"
 
-        def total_worktime_text():
-            work_time = sum(
-                [self.get_work_time_from_weekday(weekday_idx) for weekday_idx in range(get_current_weekday())]
-            )
-            target = sum([WorktimeTracker.targets[weekday_idx] for weekday_idx in range(get_current_weekday())])
-            return f"Week overtime: {seconds_to_human_readable(work_time - target)}"
-
-        lines = [weekday_text(weekday_idx) for weekday_idx in range(get_current_weekday() + 1)][::-1]
-        lines += [total_worktime_text()]
-        return lines
+    def get_week_summaries(self):
+        """Nicely formatted day summaries for displaying to the user"""
+        summaries = [self.get_weekday_summary(weekday_idx) for weekday_idx in range(get_current_weekday() + 1)][::-1]
+        summaries += [self.get_week_overtime_summary()]
+        return summaries
 
 
 class Day:

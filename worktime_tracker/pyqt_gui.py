@@ -5,18 +5,21 @@ from PyQt5.QtWidgets import QApplication, QLabel, QDesktopWidget  # pylint: disa
 
 from worktime_tracker.worktime_tracker import WorktimeTracker
 from worktime_tracker.date_utils import get_current_weekday
+from worktime_tracker.constants import REFRESH_RATE
 
 
 class WorktimeTrackerThread(QThread, WorktimeTracker):
 
     state_changed = pyqtSignal()
+    has_run = False
 
     def run(self):
         while True:
             state_changed = self.check_state()
-            if state_changed:
+            if state_changed or not self.has_run:
                 self.state_changed.emit()
-            time.sleep(10)
+                self.has_run = True
+            time.sleep(REFRESH_RATE)
 
 
 class Window(QLabel):
@@ -44,14 +47,11 @@ class Window(QLabel):
         self.worktime_tracker_thread.state_changed.connect(self.update_text)
         self.worktime_tracker_thread.start()
 
-    def lines(self):
-        return self.worktime_tracker_thread.lines()
-
     @pyqtSlot()
     def update_text(self):
-        lines = self.lines()
-        self.setText("\n".join(lines))
-        self.set_geometry(n_lines=len(lines), max_characters=max([len(line) for line in lines]))
+        summaries = self.worktime_tracker_thread.get_week_summaries()
+        self.setText("\n".join(summaries))
+        self.set_geometry(n_lines=len(summaries), max_characters=max([len(summary) for summary in summaries]))
 
 
 def start():

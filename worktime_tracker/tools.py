@@ -1,18 +1,22 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 from functools import lru_cache
-import time
 import subprocess
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
-from worktime_tracker.constants import WORK_STATES
 
-from worktime_tracker.date_utils import get_current_day_start, get_current_weekday
+from worktime_tracker.constants import WORK_STATES
+from worktime_tracker.date_utils import (
+    get_current_day_end,
+    get_current_day_start,
+    get_current_weekday,
+    coerce_to_datetime,
+)
 from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.worktime_tracker import get_work_time
-from worktime_tracker.logs import rewrite_history, read_first_log, Log, get_all_logs, convert_logs_to_intervals
+from worktime_tracker.logs import rewrite_history, read_first_log, get_all_logs, convert_logs_to_intervals
 from worktime_tracker.worktime_tracker import WorktimeTracker, get_average_work_time_at, group_intervals_by_day
 
 
@@ -38,11 +42,13 @@ def rewrite_history_prompt():
     rewrite_history(start, end, new_state)
 
 
-def get_productivity_plot(start_timestamp, end_timestamp):
+def get_productivity_plot(start_datetime: datetime, end_datetime: datetime):
     def format_timestamp(timestamp):
         d = datetime.fromtimestamp(timestamp)
         return f"{d.hour}h{d.minute:02d}"
 
+    start_timestamp = start_datetime.timestamp()
+    end_timestamp = end_datetime.timestamp()
     bin_size = 15 * 60
     n_bins = int((end_timestamp - start_timestamp) / bin_size)
     end_timestamp = start_timestamp + n_bins * bin_size
@@ -53,13 +59,13 @@ def get_productivity_plot(start_timestamp, end_timestamp):
         table.append(
             {
                 # Very slow for old logs, would be better to use Discretizer
-                "work_time": get_work_time(bin_start, bin_end),
+                "work_time": get_work_time(coerce_to_datetime(bin_start), coerce_to_datetime(bin_end)),
                 "bin_start": bin_start,
                 "bin_end": bin_end,
                 "formatted_start_time": format_timestamp(bin_start),
             }
         )
-    total_work_time = get_work_time(start_timestamp, end_timestamp)
+    total_work_time = get_work_time(start_datetime, end_datetime)
     df = pd.DataFrame(table).sort_values("bin_start")
     df["work_time_m"] = df["work_time"] / 60
     fig = px.histogram(
@@ -73,10 +79,9 @@ def get_productivity_plot(start_timestamp, end_timestamp):
 
 
 def get_todays_productivity_plot():
-    interval = 1 * 24 * 60 * 60
-    start_timestamp = get_current_day_start().timestamp
-    end_timestamp = min(start_timestamp + interval, time.time())
-    return get_productivity_plot(start_timestamp, end_timestamp)
+    start_datetime = get_current_day_start()
+    end_datetime = min(get_current_day_end(), datetime.now())
+    return get_productivity_plot(start_datetime, end_datetime)
 
 
 def download_productivity_plot(path="productivity_plot.png"):
@@ -179,12 +184,16 @@ def create_ghost_plot(your_position, ghost_position, length=100):
         assert 0 <= position <= 1
         position_idx = int(position * len(plot))
         plot_as_list = list(plot)  # Use list because strings don't support item assignment
-        return ''.join(plot_as_list[: position_idx - len(icon)] + list(icon) + plot_as_list[position_idx:])
+        for i, char in enumerate(icon):
+            if position_idx + i >= len(plot_as_list):
+                break
+            plot_as_list[position_idx + i] = char
+        return "".join(plot_as_list)
 
-    plot = '-' * length
-    plot = add_icon_on_plot(plot=plot, icon='[Ghost]', position=ghost_position)
-    plot = add_icon_on_plot(plot=plot, icon='[You]', position=your_position)
-    return f'[{plot}]'
+    plot = "-" * length
+    plot = add_icon_on_plot(plot=plot, icon="[Ghost]", position=ghost_position)
+    plot = add_icon_on_plot(plot=plot, icon="[You]", position=your_position)
+    return f"[{plot}]"
 
 
 def get_ghost_plot(length=100):
@@ -193,7 +202,7 @@ def get_ghost_plot(length=100):
     if target == 0:
         return ""
     ghost_work_time = get_average_work_time_at(days, datetime.now().time())
-    ghost_position = ghost_work_time / target
+    ghost_position = min(ghost_work_time / target, 1)
     your_worktime = WorktimeTracker.get_work_time_from_weekday(get_current_weekday())
-    your_position = your_worktime / target
+    your_position = min(your_worktime / target, 1)
     return create_ghost_plot(your_position=your_position, ghost_position=ghost_position, length=length)

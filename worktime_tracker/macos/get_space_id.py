@@ -1,6 +1,9 @@
 import subprocess
 import time
 
+# Need to import curses before importing Quartz
+# https://stackoverflow.com/questions/70327852/bug-when-importing-quartz-before-curses
+import curses  # pylint: disable=unused-import
 import Quartz
 
 from worktime_tracker.utils import REPO_DIR

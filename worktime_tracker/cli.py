@@ -3,9 +3,9 @@ import time
 from tqdm import tqdm
 
 from worktime_tracker.worktime_tracker import WorktimeTracker
-from worktime_tracker.utils import seconds_to_human_readable
-from worktime_tracker.date_utils import get_current_weekday, parse_time
+from worktime_tracker.date_utils import parse_time
 from worktime_tracker.tools import get_ghost_plot, rewrite_history_prompt, plot_productivity
+from worktime_tracker.constants import REFRESH_RATE
 
 
 def pause():
@@ -21,15 +21,9 @@ def start():
     while True:
         try:
             worktime_tracker.check_state()
-            # Get lines to display
-            lines = worktime_tracker.lines()
-            # Update menu with new times
-            menu = lines[1:][::-1]  # Sort days in chronological order
-            work_ratio_last_period = worktime_tracker.get_work_ratio_since_timestamp(time.time() - 3600 / 2)
-            work_time_today = worktime_tracker.get_work_time_from_weekday(get_current_weekday())
-            today = f"{int(100 * work_ratio_last_period)}% - {seconds_to_human_readable(work_time_today)}"
-            print(" - ".join([get_ghost_plot(length=50), today] + menu) + "\r", end="")
-            time.sleep(30)
+            summaries = worktime_tracker.get_week_summaries()
+            print(" - ".join([get_ghost_plot(length=50)] + summaries) + "\r", end="")
+            time.sleep(REFRESH_RATE)
         except KeyboardInterrupt:
             options_to_methods = {
                 "0. Pause for a certain duration": pause,
@@ -39,7 +33,8 @@ def start():
             options_str = "\n".join(options_to_methods.keys())
             option_index = int(
                 input(
-                    f"\nInterrupted, press ctrl-c a second time to quit or select one of the following options:\n\n{options_str}\n\nOption: "
+                    "\nInterrupted, press ctrl-c a second time to quit or select one of the following options:"
+                    f"\n\n{options_str}\n\nOption: "
                 )
             )
             method = list(options_to_methods.values())[option_index]

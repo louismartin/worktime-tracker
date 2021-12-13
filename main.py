@@ -3,8 +3,6 @@ import sys
 import time
 import json
 
-# Need to import curses before importing Quartz https://stackoverflow.com/questions/70327852/bug-when-importing-quartz-before-curses
-import curses
 from worktime_tracker.spaces import get_space_id
 from worktime_tracker.utils import SPACE_TYPES_PATH
 
