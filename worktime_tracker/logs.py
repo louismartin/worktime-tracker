@@ -82,6 +82,10 @@ def get_logs(start_datetime: datetime, end_datetime: datetime):
     return logs[::-1]  # Order the list back to original because we have read the logs backward
 
 
+def get_all_intervals():
+    logs = get_all_logs()
+    return convert_logs_to_intervals(logs)
+
 def get_intervals(start_datetime: datetime, end_datetime: datetime):
     logs = get_logs(start_datetime, end_datetime)
     return convert_logs_to_intervals(logs)

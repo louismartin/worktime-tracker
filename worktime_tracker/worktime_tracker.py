@@ -1,4 +1,5 @@
 from collections import defaultdict
+from functools import lru_cache
 from datetime import datetime, time as datetime_time  # Avoid confusion between time and datetime
 import time
 
@@ -14,6 +15,7 @@ from worktime_tracker.date_utils import (
     get_day_end,
 )
 from worktime_tracker.logs import (
+    get_all_intervals,
     get_intervals,
     read_last_log,
     maybe_write_log,
@@ -200,3 +202,10 @@ def get_average_work_time_at(days, dt_time):
             continue
         work_times_at.append(day.get_work_time_at(dt_time))
     return sum(work_times_at) / len(work_times_at)
+
+
+@lru_cache()
+def get_days():
+    # TODO: This function can be misleading as it does not update
+    intervals = get_all_intervals()
+    return group_intervals_by_day(intervals)

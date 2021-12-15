@@ -15,9 +15,9 @@ from worktime_tracker.date_utils import (
     coerce_to_datetime,
 )
 from worktime_tracker.utils import seconds_to_human_readable
-from worktime_tracker.worktime_tracker import get_work_time
+from worktime_tracker.worktime_tracker import get_work_time, get_days
 from worktime_tracker.logs import rewrite_history, read_first_log, get_all_logs, convert_logs_to_intervals
-from worktime_tracker.worktime_tracker import WorktimeTracker, get_average_work_time_at, group_intervals_by_day
+from worktime_tracker.worktime_tracker import WorktimeTracker, get_average_work_time_at
 
 
 def rewrite_history_prompt():
@@ -169,14 +169,6 @@ def get_daily_worktime_df():
         .agg({"start_datetime": "min", "work_time": "sum"})
         .reset_index()
     )
-
-
-@lru_cache()
-def get_days():
-    # TODO: This function can be misleading as it does not update
-    logs = get_all_logs()
-    intervals = convert_logs_to_intervals(logs)
-    return group_intervals_by_day(intervals)
 
 
 def create_ghost_plot(your_position, ghost_position, length=100):

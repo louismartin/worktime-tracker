@@ -50,12 +50,15 @@ def seconds_to_human_readable(seconds):
     days = td.days
     hours = td.seconds // 3600
     minutes = (td.seconds // 60) % 60
-    days = f"{days}d " if days > 0 else ""
-    hours = f"{hours}h " if hours > 0 else ""
-    minutes = f"{minutes:02d}m"
-    if days == "":
-        hours = hours.strip(" ")  # Display as 3d 2h 25 but as 2h25 if no days
-    return f"{sign}{days}{hours}{minutes}".strip()
+    days_str = f"{days}d " if days > 0 else ""
+    hours_str = f"{hours}h " if hours > 0 else ""
+    minutes_str = f"{minutes}m"
+    if hours > 0:
+        # Display as 2h05m instead of 2h5m
+        minutes_str = f"{minutes:02d}m"
+    if days == 0:
+        hours_str = hours_str.strip(" ")  # Display as 3d 2h 25 but as 2h25 if no days
+    return f"{sign}{days_str}{hours_str}{minutes_str}".strip()
 
 
 def yield_lines(filepath):
