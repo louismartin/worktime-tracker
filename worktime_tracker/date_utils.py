@@ -82,4 +82,4 @@ def parse_time(time_str):
     for name, param in parts.items():
         if param:
             time_params[name] = int(param)
-    return datetime.timedelta(**time_params)
+    return timedelta(**time_params)
