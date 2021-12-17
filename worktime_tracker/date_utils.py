@@ -23,7 +23,7 @@ def coerce_to_datetime(datetime_like):
 
 
 def coerce_to_timestamp(timestamp_like):
-    if isinstance(timestamp_like, int) or isinstance(timestamp_like, float):
+    if isinstance(timestamp_like, (int, float)):
         return timestamp_like
     return timestamp_like.timestamp()
 
