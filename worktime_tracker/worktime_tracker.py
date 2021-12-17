@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import lru_cache
-from datetime import datetime, time as datetime_time  # Avoid confusion between time and datetime
+from datetime import datetime, timedelta, time as datetime_time  # Avoid confusion between time and datetime
 import time
 
 from worktime_tracker.utils import seconds_to_human_readable
@@ -148,9 +148,12 @@ class Day:
 
     def get_work_time_at(self, dt_time):
         assert isinstance(dt_time, datetime_time)
+
         dt = datetime.combine(self.day_start, dt_time)
-        assert self.day_start <= dt
+        if dt <= self.day_start:  # Hours after midnight should count as the next day
+            dt += timedelta(days=1)
         intervals_before_dt = get_intervals_between(self.work_intervals, self.day_start, dt)
+        assert self.day_start <= dt
         return sum([interval.work_time for interval in intervals_before_dt])
 
     @property
