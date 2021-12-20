@@ -128,6 +128,7 @@ def get_rewritten_history_logs(start_datetime, end_datetime, new_state, logs):
     start_timestamp = start_datetime.timestamp()
     end_timestamp = end_datetime.timestamp()
     logs = [(log.timestamp, log.state) for log in logs]
+    # TODO: Should we compare to datetime.now() instead? Right now if the last log is old, we can't rewrite after it.
     assert end_timestamp < logs[-1][0], "Rewriting the future not allowed"
     # Remove logs that are in the interval to be rewritten
     logs_before = [(timestamp, state) for (timestamp, state) in logs if timestamp <= start_timestamp]

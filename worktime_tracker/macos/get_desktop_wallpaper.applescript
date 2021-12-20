@@ -5,4 +5,4 @@ set text item delimiters to {"/"}
 tell application "System Events" to set BGpict to ¬
      last text item of (picture of current desktop as text)
 set text item delimiters to delimOrgs
-return BGpict 
+return BGpict
