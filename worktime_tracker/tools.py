@@ -28,18 +28,12 @@ def rewrite_history_prompt():
     end_hour, end_minute = [int(x) for x in end.split(":")]
     day_offset = input("Day offset? (default=0): ")
     day_offset = int(day_offset) if day_offset != "" else 0
-    start = (
-        (now + timedelta(days=day_offset))
-        .replace(hour=start_hour, minute=start_minute, second=0, microsecond=0)
-        .timestamp()
+    start_datetime = (now + timedelta(days=day_offset)).replace(
+        hour=start_hour, minute=start_minute, second=0, microsecond=0
     )
-    end = (
-        (now + timedelta(days=day_offset))
-        .replace(hour=end_hour, minute=end_minute, second=0, microsecond=0)
-        .timestamp()
-    )
+    end_datetime = (now + timedelta(days=day_offset)).replace(hour=end_hour, minute=end_minute, second=0, microsecond=0)
     new_state = input("New state?: ")
-    rewrite_history(start, end, new_state)
+    rewrite_history(start_datetime, end_datetime, new_state)
 
 
 def get_productivity_plot(start_datetime: datetime, end_datetime: datetime):

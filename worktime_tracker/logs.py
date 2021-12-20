@@ -123,8 +123,11 @@ def read_first_log():
         return parse_log_line(first_line)
 
 
-def get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs):
-    logs = [(log.timestamp, log.state) for log in logs]  # TODO: adapt function to use the Log class
+def get_rewritten_history_logs(start_datetime, end_datetime, new_state, logs):
+    # TODO: adapt function to use the Log class and datetimes
+    start_timestamp = start_datetime.timestamp()
+    end_timestamp = end_datetime.timestamp()
+    logs = [(log.timestamp, log.state) for log in logs]
     assert end_timestamp < logs[-1][0], "Rewriting the future not allowed"
     # Remove logs that are in the interval to be rewritten
     logs_before = [(timestamp, state) for (timestamp, state) in logs if timestamp <= start_timestamp]
@@ -148,12 +151,12 @@ def get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs):
     return logs_before + [(start_timestamp, new_state)] + logs_after
 
 
-def rewrite_history(start_timestamp, end_timestamp, new_state):
+def rewrite_history(start_datetime, end_datetime, new_state):
     # Careful, this methods rewrites the entire log file
     shutil.copy(LOGS_PATH, f"{LOGS_PATH}.bck{int(time.time())}")
     logs = get_all_logs()
     # TODO: Rewrite the function to use the Log class
-    new_logs = get_rewritten_history_logs(start_timestamp, end_timestamp, new_state, logs)
+    new_logs = get_rewritten_history_logs(start_datetime, end_datetime, new_state, logs)
     with LOGS_PATH.open("w") as f:
         for timestamp, state in new_logs:
             f.write(f"{timestamp}\t{state}\n")
