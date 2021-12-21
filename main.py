@@ -4,7 +4,7 @@ import time
 import json
 
 from worktime_tracker.spaces import get_space_id
-from worktime_tracker.utils import SPACE_TYPES_PATH
+from worktime_tracker.constants import SPACE_TYPES_PATH
 
 
 def setup_spaces():

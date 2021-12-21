@@ -6,7 +6,7 @@ import time
 import curses  # pylint: disable=unused-import
 import Quartz
 
-from worktime_tracker.utils import REPO_DIR
+from worktime_tracker.constants import REPO_DIR
 
 
 def get_wallpaper_filename():

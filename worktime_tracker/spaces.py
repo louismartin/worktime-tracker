@@ -2,7 +2,7 @@ from functools import lru_cache
 import json
 import sys
 
-from worktime_tracker.utils import SPACE_TYPES_PATH
+from worktime_tracker.constants import SPACE_TYPES_PATH
 
 
 if sys.platform == "darwin":

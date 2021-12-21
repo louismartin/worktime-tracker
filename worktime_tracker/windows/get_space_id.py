@@ -3,7 +3,7 @@ from functools import lru_cache
 
 import win32gui
 
-from worktime_tracker.utils import REPO_DIR
+from worktime_tracker.constants import REPO_DIR
 
 
 @lru_cache(maxsize=1)

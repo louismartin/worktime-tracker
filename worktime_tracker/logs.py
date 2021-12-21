@@ -2,8 +2,8 @@ from datetime import datetime
 import time
 import shutil
 
-from worktime_tracker.constants import WORK_STATES
-from worktime_tracker.utils import LOGS_PATH, LAST_CHECK_PATH, reverse_read_lines, seconds_to_human_readable
+from worktime_tracker.constants import WORK_STATES, LOGS_PATH, LAST_CHECK_PATH
+from worktime_tracker.utils import reverse_read_lines, seconds_to_human_readable
 from worktime_tracker.date_utils import coerce_to_timestamp
 
 

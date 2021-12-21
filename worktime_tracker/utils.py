@@ -1,13 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 import os
-from pathlib import Path
-
-
-REPO_DIR = Path(__file__).resolve().parent.parent
-LOGS_PATH = REPO_DIR / ".logs/logs.tsv"
-LAST_CHECK_PATH = REPO_DIR / "last_check.txt"
-SPACE_TYPES_PATH = REPO_DIR / "space_types.json"
-LOGS_PATH.parent.mkdir(exist_ok=True)
 
 
 def reverse_read_lines(filename, buf_size=8192):
