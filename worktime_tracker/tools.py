@@ -2,10 +2,12 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from functools import lru_cache
 import subprocess
+import time
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
+from tqdm import tqdm
 
 from worktime_tracker.constants import WORK_STATES
 from worktime_tracker.date_utils import (
@@ -13,6 +15,7 @@ from worktime_tracker.date_utils import (
     get_current_day_start,
     get_current_weekday,
     coerce_to_datetime,
+    parse_time,
 )
 from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.worktime_tracker import get_work_time, get_days
@@ -193,3 +196,11 @@ def get_ghost_plot(length=100):
     your_worktime = WorktimeTracker.get_work_time_from_weekday(get_current_weekday())
     your_position = min(your_worktime / target, 1)
     return create_ghost_plot(your_position=your_position, ghost_position=ghost_position, length=length)
+
+
+def pause():
+    duration = parse_time(input("Enter a duration to pause during a certain time (e.g. 2h30).\nDuration: "))
+    if duration is not None:
+        print(f"Pausing for {duration}.")
+        for _ in tqdm(range(duration.seconds)):
+            time.sleep(1)

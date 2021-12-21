@@ -1,19 +1,8 @@
 import time
 
-from tqdm import tqdm
-
 from worktime_tracker.worktime_tracker import WorktimeTracker
-from worktime_tracker.date_utils import parse_time
-from worktime_tracker.tools import get_ghost_plot, rewrite_history_prompt, plot_productivity
+from worktime_tracker.tools import pause, get_ghost_plot, rewrite_history_prompt, plot_productivity
 from worktime_tracker.constants import REFRESH_RATE
-
-
-def pause():
-    duration = parse_time(input("Enter a duration to pause during a certain time (e.g. 2h30).\nDuration: "))
-    if duration is not None:
-        print(f"Pausing for {duration}.")
-        for _ in tqdm(range(duration.seconds)):
-            time.sleep(1)
 
 
 def start():
