@@ -1,1 +1,5 @@
 PyQt5
+numpy
+pandas
+plotly
+kaleido  # To write productivity plot to file
