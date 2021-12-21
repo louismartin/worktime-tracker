@@ -2,6 +2,7 @@ from collections import defaultdict
 from functools import lru_cache
 from datetime import datetime, timedelta, time as datetime_time  # Avoid confusion between time and datetime
 import time
+import numpy as np
 
 from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.spaces import get_state
@@ -198,13 +199,18 @@ def group_intervals_by_day(intervals):
     return [Day(intervals) for intervals in days_dict.values()]
 
 
+def get_work_times_at(days, dt_time):
+    return [day.get_work_time_at(dt_time) for day in days if day.is_work_day()]
+
+
 def get_average_work_time_at(days, dt_time):
-    work_times_at = []
-    for day in days:
-        if not day.is_work_day():
-            continue
-        work_times_at.append(day.get_work_time_at(dt_time))
+    work_times_at = get_work_times_at(days, dt_time)
     return sum(work_times_at) / len(work_times_at)
+
+
+def get_quantile_work_time_at(days, dt_time, quantile):
+    worktimes_at = get_work_times_at(days, dt_time)
+    return np.quantile(worktimes_at, quantile)
 
 
 @lru_cache()

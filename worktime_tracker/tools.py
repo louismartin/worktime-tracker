@@ -17,7 +17,7 @@ from worktime_tracker.date_utils import (
 from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.worktime_tracker import get_work_time, get_days
 from worktime_tracker.logs import rewrite_history, read_first_log, get_all_logs, convert_logs_to_intervals
-from worktime_tracker.worktime_tracker import WorktimeTracker, get_average_work_time_at
+from worktime_tracker.worktime_tracker import WorktimeTracker, get_quantile_work_time_at
 
 
 def rewrite_history_prompt():
@@ -187,7 +187,8 @@ def get_ghost_plot(length=100):
     target = WorktimeTracker.targets[get_current_weekday()]
     if target == 0:
         return ""
-    ghost_work_time = get_average_work_time_at(days, datetime.now().time())
+    # Higher quantile = ghost calibrated on your best days, lower quantile = ghost calibrated on your worst days
+    ghost_work_time = get_quantile_work_time_at(days, datetime.now().time(), quantile=0.75)
     ghost_position = min(ghost_work_time / target, 1)
     your_worktime = WorktimeTracker.get_work_time_from_weekday(get_current_weekday())
     your_position = min(your_worktime / target, 1)
