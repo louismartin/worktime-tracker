@@ -13,8 +13,8 @@ class StatusBarApp(rumps.App):
     def __init__(self, *args, **kwargs):
         super().__init__(name="", *args, **kwargs)
         self.worktime_tracker = WorktimeTracker()
-        self.refresh(None)
         self.no_alert_until = time.time()
+        self.refresh(None)
 
     def maybe_send_alert(self):
         is_work_state = self.worktime_tracker.is_work_state(self.worktime_tracker.current_state)
