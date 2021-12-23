@@ -12,7 +12,10 @@ from worktime_tracker.constants import REPO_DIR
 def get_wallpaper_filename():
     script_path = REPO_DIR / "worktime_tracker/macos/get_desktop_wallpaper.applescript"
     process = subprocess.run(["/usr/bin/osascript", str(script_path)], capture_output=True, check=False)
-    return process.stdout.decode("utf-8").strip()
+    stdout = process.stdout.decode("utf-8").strip()
+    if stdout == "":
+        print(process.stderr.decode("utf-8").strip())
+    return stdout
 
 
 def get_space_id():
