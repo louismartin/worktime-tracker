@@ -1,3 +1,5 @@
+import pytest
+
 from worktime_tracker.tools import get_todays_productivity_plot, get_ghost_plot
 
 

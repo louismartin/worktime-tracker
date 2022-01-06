@@ -23,17 +23,17 @@ def read_last_check_timestamp():
         return float(f.readline().strip())
 
 
-def write_log(timestamp, state):
+def write_log(log):
     with LOGS_PATH.open("a") as f:
-        f.write(f"{timestamp}\t{state}\n")
+        f.write(f"{log.timestamp}\t{log.state}\n")
 
 
-def maybe_write_log(timestamp, state):
+def maybe_write_log(log):
     # TODO: lock file
     last_log = read_last_log()
-    if last_log.state == state:
+    if last_log.state == log.state:
         return
-    write_log(timestamp, state)
+    write_log(log)
 
 
 def parse_log_line(log_line):
@@ -44,7 +44,7 @@ def parse_log_line(log_line):
 def reverse_read_logs():
     if not LOGS_PATH.exists():
         LOGS_PATH.parent.mkdir(exist_ok=True)
-        write_log(timestamp=0, state="locked")
+        write_log(Log(timestamp=0, state="locked"))
     for line in reverse_read_lines(LOGS_PATH):
         yield parse_log_line(line)
 
@@ -73,18 +73,17 @@ def get_logs(start_datetime: datetime, end_datetime: datetime):
     for log in get_all_logs()[::-1]:  # Read the logs backward
         if log.datetime > end_datetime:
             continue
-        if log.datetime <= start_datetime:
-            # The first log will be dated at the start timestamp queried
-            # Create a new log to prevent mutating the global logs
-            log = Log(timestamp=start_datetime.timestamp(), state=log.state)
+        if log.datetime < start_datetime:
             break
-        logs.append(log)
+        # Create a new log to prevent mutating the global logs
+        logs.append(Log(timestamp=log.timestamp, state=log.state))
     return logs[::-1]  # Order the list back to original because we have read the logs backward
 
 
 def get_all_intervals():
     logs = get_all_logs()
     return convert_logs_to_intervals(logs)
+
 
 def get_intervals(start_datetime: datetime, end_datetime: datetime):
     logs = get_logs(start_datetime, end_datetime)

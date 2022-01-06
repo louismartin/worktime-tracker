@@ -16,6 +16,7 @@ from worktime_tracker.date_utils import (
     get_day_end,
 )
 from worktime_tracker.logs import (
+    Log,
     get_all_intervals,
     get_intervals,
     read_last_log,
@@ -55,7 +56,7 @@ def maybe_fix_unfinished_work_state():
     if last_log.state not in WORK_STATES:
         return
     write_last_check(timestamp)
-    maybe_write_log(last_check_timestamp + 1, "locked")
+    maybe_write_log(Log(last_check_timestamp + 1, "locked"))
 
 
 class WorktimeTracker:
@@ -94,19 +95,19 @@ class WorktimeTracker:
         weekday_start, weekday_end = get_weekday_start_and_end(weekday)
         return get_work_time(weekday_start, weekday_end)
 
-    def maybe_append_and_write_log(self, timestamp, state):
+    def maybe_append_and_write_log(self, log):
         if self.read_only:
             return
-        maybe_write_log(timestamp, state)
+        maybe_write_log(log)
 
     def check_state(self):
         """Checks the current state and update the logs. Returns a boolean of whether the state changed or not"""
         # TODO: We should split the writing logic and the state checking logic
         last_log = read_last_log()
-        state = get_state()
         timestamp = time.time()
         write_last_check(timestamp)
-        self.maybe_append_and_write_log(timestamp, state)
+        state = get_state()
+        self.maybe_append_and_write_log(Log(timestamp, state))
         return state != last_log.state
 
     def get_weekday_summary(self, weekday_idx):
