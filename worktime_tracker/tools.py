@@ -19,7 +19,7 @@ from worktime_tracker.date_utils import (
 )
 from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.worktime_tracker import get_work_time, get_days
-from worktime_tracker.logs import rewrite_history, read_first_log, get_all_logs, convert_logs_to_intervals
+from worktime_tracker.logs import get_all_intervals, rewrite_history, read_first_log
 from worktime_tracker.worktime_tracker import WorktimeTracker, get_quantile_work_time_at
 
 
@@ -148,8 +148,7 @@ class Discretizer:
 
 @lru_cache()
 def get_hourly_worktime_df():
-    logs = get_all_logs()
-    intervals = convert_logs_to_intervals(logs)
+    intervals = get_all_intervals()
     discretizer = Discretizer(step=3600)
     for interval in intervals:
         discretizer.add_interval(interval)

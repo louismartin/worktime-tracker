@@ -64,30 +64,13 @@ def get_all_logs():
     return _ALL_LOGS.copy()
 
 
-def get_logs(start_datetime: datetime, end_datetime: datetime):
-    # TODO: Merge with get_intervals_between
-    end_datetime = min(end_datetime, datetime.now())
-    logs = [
-        Log(end_datetime.timestamp(), "locked")
-    ]  # Add a virtual state at the end of the logs to count the last state
-    for log in get_all_logs()[::-1]:  # Read the logs backward
-        if log.datetime > end_datetime:
-            continue
-        if log.datetime < start_datetime:
-            break
-        # Create a new log to prevent mutating the global logs
-        logs.append(Log(timestamp=log.timestamp, state=log.state))
-    return logs[::-1]  # Order the list back to original because we have read the logs backward
-
-
 def get_all_intervals():
     logs = get_all_logs()
     return convert_logs_to_intervals(logs)
 
 
 def get_intervals(start_datetime: datetime, end_datetime: datetime):
-    logs = get_logs(start_datetime, end_datetime)
-    return convert_logs_to_intervals(logs)
+    return get_intervals_between(get_all_intervals(), start_datetime, end_datetime)
 
 
 def get_intervals_between(intervals, start_datetime, end_datetime):
@@ -249,6 +232,9 @@ class Interval:
         split_log = Log(timestamp, self.state)
         assert self.start_log <= split_log <= self.end_log
         return Interval(self.start_log, split_log), Interval(split_log, self.end_log)
+
+    def __eq__(self, other):
+        return self.start_log == other.start_log and self.end_log == other.end_log
 
     def __repr__(self):
         start_str = self.start_datetime.strftime("%Y-%m-%d %H:%M:%S")
