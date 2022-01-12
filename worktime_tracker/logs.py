@@ -65,7 +65,7 @@ def get_all_logs():
 
 
 def get_all_intervals():
-    logs = get_all_logs()
+    logs = get_all_logs() + [Log(time.time(), "locked")]  # So that we take the last interval into account
     return convert_logs_to_intervals(logs)
 
 

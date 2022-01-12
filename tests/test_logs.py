@@ -1,7 +1,7 @@
 import copy
 from datetime import datetime
 
-from worktime_tracker.logs import _ALL_LOGS, Log, get_all_logs, get_intervals, rewrite_history, Interval
+from worktime_tracker.logs import _ALL_LOGS, Log, get_all_logs, get_all_intervals, get_intervals, rewrite_history, Interval
 from worktime_tracker.worktime_tracker import get_work_time
 from worktime_tracker.test_utils import mock_log_file
 
@@ -28,6 +28,19 @@ def test_get_intervals():
         assert initial_logs == _ALL_LOGS
 
 
+def test_get_all_intervals():
+    mocked_logs = [
+        Log(datetime(2021, 12, 7, 17, 6, 13), "locked"),
+        Log(datetime(2021, 12, 8, 17, 6, 13), "work"),
+        Log(datetime(2021, 12, 8, 17, 24, 18), "personal"),
+        Log(datetime(2021, 12, 9, 12, 4, 1), "personal"),
+    ]
+    with mock_log_file(mocked_logs):
+        intervals = get_all_intervals()
+        assert len(intervals) == len(mocked_logs)
+        assert intervals[-1].start_log == mocked_logs[-1]
+
+
 def test_rewrite_history():
     mocked_logs = [
         Log(datetime(2021, 12, 7, 8, 0, 0), "locked"),
@@ -36,8 +49,6 @@ def test_rewrite_history():
         Log(datetime(2021, 12, 7, 12, 0, 0), "work"),
         Log(datetime(2021, 12, 7, 12, 30, 0), "personal"),
     ]
-
-    # Mock the reverse_read_logs function in worktime_tracker.logs
     with mock_log_file(mocked_logs):
         assert get_work_time(datetime(2021, 12, 7, 8, 0, 0), datetime(2021, 12, 7, 13, 0, 0)) == 60 * 60
         assert get_work_time(datetime(2021, 12, 7, 11, 0, 0), datetime(2021, 12, 7, 12, 0, 0)) == 30 * 60
