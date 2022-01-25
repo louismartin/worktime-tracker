@@ -185,6 +185,7 @@ def create_ghost_plot(your_position, ghost_position, length=100):
 
 
 def get_ghost_plot(length=100):
+    # TODO: Take timezone into account
     days = get_days()
     target = WorktimeTracker.targets[get_current_weekday()]
     if target == 0:

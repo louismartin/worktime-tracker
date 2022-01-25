@@ -138,6 +138,7 @@ def rewrite_history(start_datetime, end_datetime, new_state):
     # Careful, this methods rewrites the entire log file
     shutil.copy(LOGS_PATH, f"{LOGS_PATH}.bck{int(time.time())}")
     logs = get_all_logs()
+    logs += [Log(time.time(), "locked")]  # So that we take the last interval into account
     # TODO: Rewrite the function to use the Log class
     new_logs = get_rewritten_history_logs(start_datetime, end_datetime, new_state, logs)
     with LOGS_PATH.open("w") as f:
