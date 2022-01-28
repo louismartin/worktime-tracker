@@ -59,6 +59,21 @@ def maybe_fix_unfinished_work_state():
     maybe_write_log(Log(last_check_timestamp + 1, "locked"))
 
 
+def get_work_ratio_since_timestamp(start_timestamp):
+    end_datetime = datetime.now()
+    work_time = get_work_time(start_datetime=coerce_to_datetime(start_timestamp), end_datetime=datetime.now())
+    return work_time / (end_datetime.timestamp() - start_timestamp)
+
+
+def get_work_time_from_weekday(weekday):
+    weekday_start, weekday_end = get_weekday_start_and_end(weekday)
+    return get_work_time(weekday_start, weekday_end)
+
+
+def get_todays_work_time():
+    return get_work_time_from_weekday(get_current_weekday())
+
+
 class WorktimeTracker:
 
     targets = [
@@ -85,16 +100,6 @@ class WorktimeTracker:
 
     # TODO: Move all these static methods to functions?
     @staticmethod
-    def get_work_ratio_since_timestamp(start_timestamp):
-        end_datetime = datetime.now()
-        work_time = get_work_time(start_datetime=coerce_to_datetime(start_timestamp), end_datetime=datetime.now())
-        return work_time / (end_datetime.timestamp() - start_timestamp)
-
-    @staticmethod
-    def get_work_time_from_weekday(weekday):
-        weekday_start, weekday_end = get_weekday_start_and_end(weekday)
-        return get_work_time(weekday_start, weekday_end)
-
     def maybe_append_and_write_log(self, log):
         if self.read_only:
             return
@@ -112,19 +117,19 @@ class WorktimeTracker:
 
     def get_weekday_summary(self, weekday_idx):
         weekday = WEEKDAYS[weekday_idx]
-        work_time = self.get_work_time_from_weekday(weekday_idx)
+        work_time = get_work_time_from_weekday(weekday_idx)
         target = WorktimeTracker.targets[weekday_idx]
         ratio = work_time / target if target != 0 else 1
         return f"{weekday[:3]}: {int(100 * ratio)}% ({seconds_to_human_readable(work_time)})"
 
     def get_week_overtime_summary(self):
-        work_time = sum([self.get_work_time_from_weekday(weekday_idx) for weekday_idx in range(get_current_weekday())])
+        work_time = sum([get_work_time_from_weekday(weekday_idx) for weekday_idx in range(get_current_weekday())])
         target = sum([WorktimeTracker.targets[weekday_idx] for weekday_idx in range(get_current_weekday())])
         return f"Week overtime: {seconds_to_human_readable(work_time - target)}"
 
     def get_instant_summary(self):
-        work_ratio_last_period = self.get_work_ratio_since_timestamp(time.time() - 3600 / 2)
-        work_time_today = self.get_work_time_from_weekday(get_current_weekday())
+        work_ratio_last_period = get_work_ratio_since_timestamp(time.time() - 3600 / 2)
+        work_time_today = get_work_time_from_weekday(get_current_weekday())
         return f"{int(100 * work_ratio_last_period)}% - {seconds_to_human_readable(work_time_today)}"
 
     def get_week_summaries(self):

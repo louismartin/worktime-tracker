@@ -18,7 +18,7 @@ from worktime_tracker.date_utils import (
     parse_time,
 )
 from worktime_tracker.utils import seconds_to_human_readable
-from worktime_tracker.worktime_tracker import get_work_time, get_days
+from worktime_tracker.worktime_tracker import get_work_time, get_days, get_work_time_from_weekday
 from worktime_tracker.logs import get_all_intervals, rewrite_history, read_first_log
 from worktime_tracker.worktime_tracker import WorktimeTracker, get_quantile_work_time_at
 
@@ -193,7 +193,7 @@ def get_ghost_plot(length=100):
     # Higher quantile = ghost calibrated on your best days, lower quantile = ghost calibrated on your worst days
     ghost_work_time = get_quantile_work_time_at(days, datetime.now().time(), quantile=0.75)
     ghost_position = min(ghost_work_time / target, 1)
-    your_worktime = WorktimeTracker.get_work_time_from_weekday(get_current_weekday())
+    your_worktime = get_work_time_from_weekday(get_current_weekday())
     your_position = min(your_worktime / target, 1)
     return create_ghost_plot(your_position=your_position, ghost_position=ghost_position, length=length)
 

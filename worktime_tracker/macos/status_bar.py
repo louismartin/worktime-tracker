@@ -4,7 +4,7 @@ from functools import wraps
 import rumps
 
 from worktime_tracker.constants import REFRESH_RATE
-from worktime_tracker.worktime_tracker import WorktimeTracker
+from worktime_tracker.worktime_tracker import WorktimeTracker, get_work_ratio_since_timestamp
 from worktime_tracker.tools import get_ghost_plot, rewrite_history_prompt, plot_productivity, pause
 
 
@@ -28,7 +28,7 @@ class StatusBarApp(rumps.App):
 
     def maybe_send_alert(self):
         is_work_state = self.worktime_tracker.is_work_state(self.worktime_tracker.current_state)
-        work_ratio_last_period = self.worktime_tracker.get_work_ratio_since_timestamp(time.time() - 3600 / 2)
+        work_ratio_last_period = get_work_ratio_since_timestamp(time.time() - 3600 / 2)
         if time.time() < self.no_alert_until:
             return
         if 0.1 < work_ratio_last_period < 0.80 and not is_work_state:
