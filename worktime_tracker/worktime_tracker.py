@@ -86,9 +86,8 @@ class WorktimeTracker:
         0,  # Saturday
     ]
 
-    def __init__(self, read_only=False):
+    def __init__(self):
         maybe_fix_unfinished_work_state()
-        self.read_only = read_only
 
     @staticmethod
     def is_work_state(state):
@@ -98,13 +97,6 @@ class WorktimeTracker:
     def current_state(self):
         return read_last_log().state
 
-    # TODO: Move all these static methods to functions?
-    @staticmethod
-    def maybe_append_and_write_log(self, log):
-        if self.read_only:
-            return
-        maybe_write_log(log)
-
     def check_state(self):
         """Checks the current state and update the logs. Returns a boolean of whether the state changed or not"""
         # TODO: We should split the writing logic and the state checking logic
@@ -112,7 +104,7 @@ class WorktimeTracker:
         timestamp = time.time()
         write_last_check(timestamp)
         state = get_state()
-        self.maybe_append_and_write_log(Log(timestamp, state))
+        maybe_write_log(Log(timestamp, state))
         return state != last_log.state
 
     def get_weekday_summary(self, weekday_idx):

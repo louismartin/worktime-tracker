@@ -28,11 +28,15 @@ def coerce_to_timestamp(timestamp_like):
     return timestamp_like.timestamp()
 
 
-def get_day_start(dt):
+def get_day_start(dt=None):
+    if dt is None:
+        dt = datetime.now()
     return (dt - timedelta(hours=DAY_START_HOUR)).replace(hour=DAY_START_HOUR, minute=0, second=0, microsecond=0)
 
 
-def get_day_end(dt):
+def get_day_end(dt=None):
+    if dt is None:
+        dt = datetime.now()
     return get_day_start(dt) + timedelta(days=1)
 
 
