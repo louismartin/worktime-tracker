@@ -63,13 +63,17 @@ def get_week_start():
     return (datetime.now() - delta).replace(hour=DAY_START_HOUR, minute=0, second=0, microsecond=0)
 
 
+def get_month_start():
+    return datetime.now().replace(day=1, hour=DAY_START_HOUR, minute=0, second=0, microsecond=0)
+
+
+def get_year_start():
+    return datetime.now().replace(month=1, day=1, hour=DAY_START_HOUR, minute=0, second=0, microsecond=0)
+
+
 def is_this_week(query_timestamp):
     assert query_timestamp <= time.time()
     return query_timestamp >= get_week_start().timestamp()
-
-
-def get_month_start():
-    return datetime.now().replace(day=1, hour=DAY_START_HOUR, minute=0, second=0, microsecond=0)
 
 
 def get_timestamp_weekday(timestamp):

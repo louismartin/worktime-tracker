@@ -10,6 +10,7 @@ from worktime_tracker.constants import WORK_STATES
 from worktime_tracker.date_utils import (
     get_week_start,
     get_month_start,
+    get_year_start,
     get_weekday_idx_from_datetime,
     get_weekday_start_and_end,
     WEEKDAYS,
@@ -139,6 +140,11 @@ class WorktimeTracker:
         target = get_work_time_target_between(get_month_start(), datetime.now())
         return f"Month overtime: {seconds_to_human_readable(work_time - target)}"
 
+    def get_year_overtime_summary(self):
+        work_time = get_work_time(get_year_start(), datetime.now())
+        target = get_work_time_target_between(get_year_start(), datetime.now())
+        return f"Year overtime: {seconds_to_human_readable(work_time - target)}"
+
     def get_instant_summary(self):
         work_ratio_last_period = get_work_ratio_since_timestamp(time.time() - 3600 / 2)
         work_time_today = get_work_time_from_weekday(get_current_weekday())
@@ -147,7 +153,7 @@ class WorktimeTracker:
     def get_week_summaries(self):
         """Nicely formatted day summaries for displaying to the user"""
         summaries = [self.get_weekday_summary(weekday_idx) for weekday_idx in range(get_current_weekday() + 1)][::-1]
-        summaries += [self.get_week_overtime_summary(), self.get_month_overtime_summary()]
+        summaries += [self.get_year_overtime_summary(), self.get_month_overtime_summary(), self.get_week_overtime_summary()]
         return summaries
 
 
