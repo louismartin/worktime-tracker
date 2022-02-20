@@ -48,19 +48,28 @@ def get_current_day_end():
     return get_day_end(datetime.now())
 
 
+def get_weekday_idx_from_datetime(dt):
+    weekday = (dt - timedelta(hours=DAY_START_HOUR)).weekday()
+    offset = WEEKDAYS.index("Monday")
+    return (weekday + offset) % 7
+
+
 def get_current_weekday():
-    # Add +2 to start the week on saturday
-    return ((datetime.now() - timedelta(hours=DAY_START_HOUR)).weekday() + WEEKDAYS.index("Monday")) % 7
+    return get_weekday_idx_from_datetime(datetime.now())
 
 
 def get_week_start():
     delta = timedelta(days=get_current_weekday(), hours=DAY_START_HOUR)
-    return (datetime.now() - delta).replace(hour=DAY_START_HOUR, minute=0, second=0, microsecond=0).timestamp()
+    return (datetime.now() - delta).replace(hour=DAY_START_HOUR, minute=0, second=0, microsecond=0)
 
 
 def is_this_week(query_timestamp):
     assert query_timestamp <= time.time()
-    return query_timestamp >= get_week_start()
+    return query_timestamp >= get_week_start().timestamp()
+
+
+def get_month_start():
+    return datetime.now().replace(day=1, hour=DAY_START_HOUR, minute=0, second=0, microsecond=0)
 
 
 def get_timestamp_weekday(timestamp):

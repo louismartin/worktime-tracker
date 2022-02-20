@@ -8,6 +8,9 @@ from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.spaces import get_state
 from worktime_tracker.constants import WORK_STATES
 from worktime_tracker.date_utils import (
+    get_week_start,
+    get_month_start,
+    get_weekday_idx_from_datetime,
     get_weekday_start_and_end,
     WEEKDAYS,
     get_current_weekday,
@@ -74,7 +77,19 @@ def get_todays_work_time():
     return get_work_time_from_weekday(get_current_weekday())
 
 
+def get_work_time_target_from_datetime(dt):
+    return WorktimeTracker.targets[get_weekday_idx_from_datetime(dt)]
+
+
+def get_work_time_target_between(start_datetime, end_datetime):
+    start_datetime = get_day_start(start_datetime)
+    end_datetime = get_day_start(end_datetime)  # Does not include the target of the last day
+    day_interval = (end_datetime - start_datetime).days
+    return sum(get_work_time_target_from_datetime(start_datetime + timedelta(days=i)) for i in range(day_interval))
+
+
 class WorktimeTracker:
+    # TODO: We should remove this class entirely
 
     targets = [
         0,  # Sunday
@@ -115,9 +130,14 @@ class WorktimeTracker:
         return f"{weekday[:3]}: {int(100 * ratio)}% ({seconds_to_human_readable(work_time)})"
 
     def get_week_overtime_summary(self):
-        work_time = sum([get_work_time_from_weekday(weekday_idx) for weekday_idx in range(get_current_weekday())])
-        target = sum([WorktimeTracker.targets[weekday_idx] for weekday_idx in range(get_current_weekday())])
+        work_time = get_work_time(get_week_start(), datetime.now())
+        target = get_work_time_target_between(get_week_start(), datetime.now())
         return f"Week overtime: {seconds_to_human_readable(work_time - target)}"
+
+    def get_month_overtime_summary(self):
+        work_time = get_work_time(get_month_start(), datetime.now())
+        target = get_work_time_target_between(get_month_start(), datetime.now())
+        return f"Month overtime: {seconds_to_human_readable(work_time - target)}"
 
     def get_instant_summary(self):
         work_ratio_last_period = get_work_ratio_since_timestamp(time.time() - 3600 / 2)
@@ -127,7 +147,7 @@ class WorktimeTracker:
     def get_week_summaries(self):
         """Nicely formatted day summaries for displaying to the user"""
         summaries = [self.get_weekday_summary(weekday_idx) for weekday_idx in range(get_current_weekday() + 1)][::-1]
-        summaries += [self.get_week_overtime_summary()]
+        summaries += [self.get_week_overtime_summary(), self.get_month_overtime_summary()]
         return summaries
 
 
