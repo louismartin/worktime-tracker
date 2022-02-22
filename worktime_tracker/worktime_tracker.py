@@ -89,6 +89,12 @@ def get_work_time_target_between(start_datetime, end_datetime):
     return sum(get_work_time_target_from_datetime(start_datetime + timedelta(days=i)) for i in range(day_interval))
 
 
+def get_overtime_between(start_datetime, end_datetime):
+    work_time = get_work_time(start_datetime, end_datetime)
+    target = get_work_time_target_between(start_datetime, end_datetime)
+    return work_time - target
+
+
 class WorktimeTracker:
     # TODO: We should remove this class entirely
 
@@ -131,19 +137,16 @@ class WorktimeTracker:
         return f"{weekday[:3]}: {int(100 * ratio)}% ({seconds_to_human_readable(work_time)})"
 
     def get_week_overtime_summary(self):
-        work_time = get_work_time(get_week_start(), datetime.now())
-        target = get_work_time_target_between(get_week_start(), datetime.now())
-        return f"Week overtime: {seconds_to_human_readable(work_time - target)}"
+        overtime = get_overtime_between(get_week_start(), get_day_start())
+        return f"Week overtime: {seconds_to_human_readable(overtime)}"
 
     def get_month_overtime_summary(self):
-        work_time = get_work_time(get_month_start(), datetime.now())
-        target = get_work_time_target_between(get_month_start(), datetime.now())
-        return f"Month overtime: {seconds_to_human_readable(work_time - target)}"
+        overtime = get_overtime_between(get_month_start(), get_day_start())
+        return f"Month overtime: {seconds_to_human_readable(overtime)}"
 
     def get_year_overtime_summary(self):
-        work_time = get_work_time(get_year_start(), datetime.now())
-        target = get_work_time_target_between(get_year_start(), datetime.now())
-        return f"Year overtime: {seconds_to_human_readable(work_time - target)}"
+        overtime = get_overtime_between(get_year_start(), get_day_start())
+        return f"Year overtime: {seconds_to_human_readable(overtime)}"
 
     def get_instant_summary(self):
         work_ratio_last_period = get_work_ratio_since_timestamp(time.time() - 3600 / 2)
