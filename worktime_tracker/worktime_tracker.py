@@ -1,34 +1,27 @@
-from collections import defaultdict
-from functools import lru_cache
-from datetime import datetime, timedelta, time as datetime_time  # Avoid confusion between time and datetime
 import time
+from collections import defaultdict
+from datetime import datetime
+from datetime import \
+    time as datetime_time  # Avoid confusion between time and datetime
+from datetime import timedelta
+from functools import lru_cache
+
 import numpy as np
 
-from worktime_tracker.utils import seconds_to_human_readable
-from worktime_tracker.spaces import get_state
 from worktime_tracker.constants import WORK_STATES
-from worktime_tracker.date_utils import (
-    get_week_start,
-    get_month_start,
-    get_year_start,
-    get_weekday_idx_from_datetime,
-    get_weekday_start_and_end,
-    WEEKDAYS,
-    get_current_weekday,
-    coerce_to_datetime,
-    get_day_start,
-    get_day_end,
-)
-from worktime_tracker.logs import (
-    Log,
-    get_all_intervals,
-    get_intervals,
-    read_last_log,
-    maybe_write_log,
-    write_last_check,
-    read_last_check_timestamp,
-    get_intervals_between,
-)
+from worktime_tracker.date_utils import (WEEKDAYS, coerce_to_datetime,
+                                         get_current_weekday, get_day_end,
+                                         get_day_start, get_month_start,
+                                         get_week_start,
+                                         get_weekday_idx_from_datetime,
+                                         get_weekday_start_and_end,
+                                         get_year_start)
+from worktime_tracker.logs import (Log, get_all_intervals, get_intervals,
+                                   get_intervals_between, maybe_write_log,
+                                   read_last_check_timestamp, read_last_log,
+                                   write_last_check)
+from worktime_tracker.spaces import get_state
+from worktime_tracker.utils import seconds_to_human_readable
 
 
 def get_cum_times_per_state(start_datetime: datetime, end_datetime: datetime):
