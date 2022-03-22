@@ -8,24 +8,35 @@ from functools import lru_cache
 
 import numpy as np
 
-from worktime_tracker.constants import WORK_STATES
+from worktime_tracker.constants import WORK_STATES, DAYS_OFF_PATH
 from worktime_tracker.date_utils import (WEEKDAYS, coerce_to_datetime,
                                          get_current_weekday, get_day_end,
                                          get_day_start, get_month_start,
                                          get_week_start,
                                          get_weekday_idx_from_datetime,
                                          get_weekday_start_and_end,
-                                         get_year_start)
+                                         get_year_start, is_datetime_in_date)
 from worktime_tracker.logs import (Log, get_all_intervals, get_intervals,
                                    get_intervals_between, maybe_write_log,
                                    read_last_check_timestamp, read_last_log,
                                    write_last_check)
 from worktime_tracker.spaces import get_state
-from worktime_tracker.utils import seconds_to_human_readable
+from worktime_tracker.utils import seconds_to_human_readable, yield_lines
+
+
+@lru_cache
+def get_days_off():
+    days_off = []
+    if not DAYS_OFF_PATH.exists():
+        return days_off
+    for line in yield_lines(DAYS_OFF_PATH):
+        # Parse date in the format 2022-03-19
+        days_off.append(datetime.strptime(line, "%Y-%m-%d").date())
+    return days_off
 
 
 def get_cum_times_per_state(start_datetime: datetime, end_datetime: datetime):
-    assert start_datetime < end_datetime
+    assert start_datetime <= end_datetime
     intervals = get_intervals(start_datetime, end_datetime)
     cum_times_per_state = defaultdict(float)
     for interval in intervals:
@@ -72,6 +83,8 @@ def get_todays_work_time():
 
 
 def get_work_time_target_from_datetime(dt):
+    if any(is_datetime_in_date(dt, day_off) for day_off in get_days_off()):
+        return 0
     return WorktimeTracker.targets[get_weekday_idx_from_datetime(dt)]
 
 

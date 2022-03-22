@@ -2,9 +2,8 @@ import time
 import re
 from datetime import datetime, timedelta
 
-from worktime_tracker.constants import DAY_START_HOUR
 
-
+DAY_START_HOUR = 7  # Hour at which the day starts
 WEEKDAYS = [
     "Sunday",
     "Monday",
@@ -28,10 +27,15 @@ def coerce_to_timestamp(timestamp_like):
     return timestamp_like.timestamp()
 
 
+def get_date(dt):
+    return (dt - timedelta(hours=DAY_START_HOUR)).date()
+
+
 def get_day_start(dt=None):
     if dt is None:
         dt = datetime.now()
-    return (dt - timedelta(hours=DAY_START_HOUR)).replace(hour=DAY_START_HOUR, minute=0, second=0, microsecond=0)
+    d = get_date(dt)
+    return datetime(d.year, d.month, d.day, DAY_START_HOUR)
 
 
 def get_day_end(dt=None):
@@ -100,3 +104,7 @@ def parse_time(time_str):
         if param:
             time_params[name] = int(param)
     return timedelta(**time_params)
+
+
+def is_datetime_in_date(dt, d):
+    return get_date(dt) == d
