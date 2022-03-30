@@ -26,12 +26,14 @@ from worktime_tracker.utils import seconds_to_human_readable, yield_lines
 
 @lru_cache
 def get_days_off():
-    days_off = []
+    """Returns a dict of dates to day off proportion (e.g. 1 means full day off, 0.5 half a day off, 0 not a day off)"""
+    days_off = {}
     if not DAYS_OFF_PATH.exists():
         return days_off
     for line in yield_lines(DAYS_OFF_PATH):
         # Parse date in the format 2022-03-19
-        days_off.append(datetime.strptime(line, "%Y-%m-%d").date())
+        date, proportion = line.split("\t")
+        days_off[datetime.strptime(date, "%Y-%m-%d").date()] = float(proportion)
     return days_off
 
 
@@ -83,9 +85,9 @@ def get_todays_work_time():
 
 
 def get_work_time_target_from_datetime(dt):
-    if any(is_datetime_in_date(dt, day_off) for day_off in get_days_off()):
-        return 0
-    return WorktimeTracker.targets[get_weekday_idx_from_datetime(dt)]
+    days_off = get_days_off()
+    day_off_proportion = days_off.get(dt.date(), 0)  # 1 means full day off, 0.5 half a day off, 0 not a day off
+    return WorktimeTracker.targets[get_weekday_idx_from_datetime(dt)] * (1 - day_off_proportion)
 
 
 def get_work_time_target_between(start_datetime, end_datetime):
