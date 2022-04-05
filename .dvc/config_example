@@ -1,0 +1,2 @@
+['remote "gdrive"']
+    url = gdrive://{folder ID}

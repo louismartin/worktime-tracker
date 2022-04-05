@@ -2,6 +2,12 @@
 *.swp
 *.ipynb
 .venv
-.logs/*
 last_check.txt
 space_types.json
+productivity_plot.png
+
+# Pycharm
+.idea/
+
+# DVC
+/.logs
