@@ -7,6 +7,7 @@ from datetime import timedelta
 from functools import lru_cache
 
 import numpy as np
+from worktime_tracker.config import Config
 
 from worktime_tracker.constants import WORK_STATES, DAYS_OFF_PATH
 from worktime_tracker.date_utils import (WEEKDAYS, coerce_to_datetime,
@@ -15,7 +16,7 @@ from worktime_tracker.date_utils import (WEEKDAYS, coerce_to_datetime,
                                          get_week_start,
                                          get_weekday_idx_from_datetime,
                                          get_weekday_start_and_end,
-                                         get_year_start, is_datetime_in_date)
+                                         get_year_start)
 from worktime_tracker.logs import (Log, get_all_intervals, get_intervals,
                                    get_intervals_between, maybe_write_log,
                                    read_last_check_timestamp, read_last_log,
@@ -158,8 +159,11 @@ class WorktimeTracker:
 
     def get_instant_summary(self):
         work_ratio_last_period = get_work_ratio_since_timestamp(time.time() - 3600 / 2)
-        work_time_today = get_work_time_from_weekday(get_current_weekday())
-        return f"{int(100 * work_ratio_last_period)}% - {seconds_to_human_readable(work_time_today)}"
+        instant_summary = f"{work_ratio_last_period:.0%}"
+        if Config().show_day_worktime:
+            work_time_today = get_work_time_from_weekday(get_current_weekday())
+            instant_summary = f"{instant_summary} - {seconds_to_human_readable(work_time_today)}"
+        return instant_summary
 
     def get_week_summaries(self):
         """Nicely formatted day summaries for displaying to the user"""
