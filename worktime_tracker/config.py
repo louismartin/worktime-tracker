@@ -11,6 +11,7 @@ class Config:
     Configuration class for the application.
     """
     config_path = REPO_DIR / "config.json"
+    interface: str = "cli"
     show_day_worktime: bool = True
 
     def __init__(self) -> None:

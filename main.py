@@ -2,6 +2,7 @@
 import sys
 import time
 import json
+from worktime_tracker.config import Config
 
 from worktime_tracker.spaces import get_space_id
 from worktime_tracker.constants import SPACE_TYPES_PATH
@@ -60,7 +61,12 @@ def start_cli_curses():
 
 def macos_main():
     print("Starting Worktime Tracker for macOS")
-    start_macos_status_bar_app()
+    start = {
+        "cli": start_cli,
+        "cli-curses": start_cli_curses,
+        "macos-status-bar": start_macos_status_bar_app,
+    }[Config().interface]
+    start()
 
 
 def linux_main():
