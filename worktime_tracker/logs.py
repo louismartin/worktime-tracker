@@ -1,21 +1,50 @@
-from datetime import datetime
 import time
 import shutil
+import datetime
 
-from worktime_tracker.constants import WORK_STATES, LOGS_PATH, LAST_CHECK_PATH
-from worktime_tracker.utils import reverse_read_lines, seconds_to_human_readable
+from worktime_tracker.constants import STATES_TYPE, LOGS_PATH, LAST_CHECK_PATH
+from worktime_tracker.utils import reverse_read_lines
 from worktime_tracker.date_utils import coerce_to_timestamp
 
 
-_ALL_LOGS = []
+class Log:
+    """Represents a log entry at a single point of time, basically containing a timestamp and a state.
+    It is supposed to match the format of the logs file.
+    """
+    def __init__(self, timestamp: float, state: STATES_TYPE) -> None:
+        self.timestamp = coerce_to_timestamp(timestamp)
+        self.state = state
+
+    @property
+    def datetime(self) -> datetime.datetime:
+        return datetime.datetime.fromtimestamp(self.timestamp)
+
+    def __repr__(self) -> str:
+        date_str = self.datetime.strftime("%Y-%m-%d %H:%M:%S")
+        return f"Log<date={date_str}, state={self.state}>"
+
+    def __eq__(self, other) -> bool:
+        return self.timestamp == other.timestamp and self.state == other.state
+
+    def __lt__(self, other) -> bool:
+        return self.timestamp < other.timestamp
+
+    def __le__(self, other) -> bool:
+        return self.timestamp <= other.timestamp
+
+    def __gt__(self, other) -> bool:
+        return self.timestamp > other.timestamp
+
+    def __ge__(self, other) -> bool:
+        return self.timestamp >= other.timestamp
 
 
-def write_last_check(timestamp):
+def write_last_check(timestamp: float) -> None:
     with LAST_CHECK_PATH.open("w") as f:
         f.write(str(timestamp) + "\n")
 
 
-def read_last_check_timestamp():
+def read_last_check_timestamp() -> float:
     if not LAST_CHECK_PATH.exists():
         with open(LAST_CHECK_PATH, "w", encoding="utf8") as f:
             f.write("0\n")
@@ -23,12 +52,12 @@ def read_last_check_timestamp():
         return float(f.readline().strip())
 
 
-def write_log(log):
+def write_log(log: Log) -> None:
     with LOGS_PATH.open("a") as f:
         f.write(f"{log.timestamp}\t{log.state}\n")
 
 
-def maybe_write_log(log):
+def maybe_write_log(log: Log):
     # TODO: lock file
     last_log = read_last_log()
     if last_log.state == log.state:
@@ -36,12 +65,12 @@ def maybe_write_log(log):
     write_log(log)
 
 
-def parse_log_line(log_line):
+def parse_log_line(log_line: str) -> Log:
     timestamp, state = log_line.strip().split("\t")
     return Log(timestamp=float(timestamp), state=state)
 
 
-def reverse_read_logs():
+def reverse_read_logs() -> list[Log]:
     if not LOGS_PATH.exists():
         LOGS_PATH.parent.mkdir(exist_ok=True)
         write_log(Log(timestamp=0, state="locked"))
@@ -49,54 +78,14 @@ def reverse_read_logs():
         yield parse_log_line(line)
 
 
-def get_all_logs():
-    # We don't reload all logs each time, just the new ones
-    last_log = Log(timestamp=0, state="locked")
-    if len(_ALL_LOGS) > 0:
-        last_log = _ALL_LOGS[-1]  # Last loaded log
-    new_logs = []
-    # Read file in reverse to find new logs that are not loaded yet
-    for log in reverse_read_logs():
-        if log <= last_log:
-            break
-        new_logs.append(log)
-    _ALL_LOGS.extend(new_logs[::-1])
-    return _ALL_LOGS.copy()
-
-
-def get_all_intervals():
-    logs = get_all_logs() + [Log(time.time(), "locked")]  # So that we take the last interval into account
-    return convert_logs_to_intervals(logs)
-
-
-def get_intervals(start_datetime: datetime, end_datetime: datetime):
-    return get_intervals_between(get_all_intervals(), start_datetime, end_datetime)
-
-
-def get_intervals_between(intervals, start_datetime, end_datetime):
-    """Get intervals between start_datetime and end_datetime"""
-    assert start_datetime <= end_datetime
-    intervals_between = []
-    for interval in intervals:
-        if interval.end_datetime < start_datetime or end_datetime < interval.start_datetime:
-            # Discard intervals that doe not overlap with the range
-            continue
-        if interval.start_datetime < start_datetime:
-            _, interval = interval.split(start_datetime)
-        if end_datetime < interval.end_datetime:
-            interval, _ = interval.split(end_datetime)
-        intervals_between.append(interval)
-    return intervals_between
-
-
-def read_last_log():
+def read_last_log() -> Log:
     try:
         return next(reverse_read_logs())
     except StopIteration:
         return None
 
 
-def read_first_log():
+def read_first_log() -> Log:
     with open(LOGS_PATH, "r", encoding="utf8") as f:
         try:
             first_line = next(f)
@@ -105,7 +94,7 @@ def read_first_log():
         return parse_log_line(first_line)
 
 
-def get_rewritten_history_logs(start_datetime, end_datetime, new_state, logs):
+def get_rewritten_history_logs(logs: list[Log], start_datetime: datetime.datetime, end_datetime: datetime.datetime, new_state: STATES_TYPE) -> list[Log]:
     # TODO: adapt function to use the Log class and datetimes
     start_timestamp = start_datetime.timestamp()
     end_timestamp = end_datetime.timestamp()
@@ -134,19 +123,20 @@ def get_rewritten_history_logs(start_datetime, end_datetime, new_state, logs):
     return logs_before + [(start_timestamp, new_state)] + logs_after
 
 
-def rewrite_history(start_datetime, end_datetime, new_state):
-    # Careful, this methods rewrites the entire log file
-    backup_dir = LOGS_PATH.parent / "backup"
-    backup_dir.mkdir(exist_ok=True)
-    shutil.copy(LOGS_PATH, backup_dir / f"{LOGS_PATH.name}.bck{int(time.time())}")
-    logs = get_all_logs()
-    logs += [Log(time.time(), "locked")]  # So that we take the last interval into account
-    # TODO: Rewrite the function to use the Log class
-    new_logs = get_rewritten_history_logs(start_datetime, end_datetime, new_state, logs)
-    with LOGS_PATH.open("w") as f:
-        for timestamp, state in new_logs:
-            f.write(f"{timestamp}\t{state}\n")
-    _ALL_LOGS[:] = []  # Reset logs
+def rewrite_history(start_datetime: datetime.datetime, end_datetime: datetime.datetime, new_state: STATES_TYPE) -> None:
+    raise NotImplementedError  # TODO: Reimplement
+    # # Careful, this methods rewrites the entire log file
+    # backup_dir = LOGS_PATH.parent / "backup"
+    # backup_dir.mkdir(exist_ok=True)
+    # shutil.copy(LOGS_PATH, backup_dir / f"{LOGS_PATH.name}.bck{int(time.time())}")
+    # logs = get_all_logs()
+    # logs += [Log(time.time(), "locked")]  # So that we take the last interval into account
+    # # TODO: Rewrite the function to use the Log class
+    # new_logs = get_rewritten_history_logs(start_datetime, end_datetime, new_state, logs)
+    # with LOGS_PATH.open("w") as f:
+    #     for timestamp, state in new_logs:
+    #         f.write(f"{timestamp}\t{state}\n")
+    # _ALL_LOGS[:] = []  # Reset logs
 
 
 def remove_identical_consecutive_states(logs):
@@ -162,87 +152,3 @@ def remove_identical_consecutive_states(logs):
         previous_state = state
     return new_logs
 
-
-class Log:
-    # TODO: This log abstraction aims at replacing (timestamp, state) tuples
-    def __init__(self, timestamp, state):
-        self.timestamp = coerce_to_timestamp(timestamp)
-        self.state = state
-
-    @property
-    def datetime(self):
-        return datetime.fromtimestamp(self.timestamp)
-
-    def __repr__(self):
-        date_str = self.datetime.strftime("%Y-%m-%d %H:%M:%S")
-        return f"Log<date={date_str}, state={self.state}>"
-
-    def __eq__(self, other):
-        return self.timestamp == other.timestamp and self.state == other.state
-
-    def __lt__(self, other):
-        return self.timestamp < other.timestamp
-
-    def __le__(self, other):
-        return self.timestamp <= other.timestamp
-
-    def __gt__(self, other):
-        return self.timestamp > other.timestamp
-
-    def __ge__(self, other):
-        return self.timestamp >= other.timestamp
-
-
-class Interval:
-    def __init__(self, start_log, end_log):
-        assert start_log <= end_log
-        self.start_log = start_log
-        self.end_log = end_log
-
-    @property
-    def state(self):
-        return self.start_log.state
-
-    @property
-    def is_work_interval(self):
-        return self.state in WORK_STATES
-
-    @property
-    def start_datetime(self):
-        return self.start_log.datetime
-
-    @property
-    def end_datetime(self):
-        return self.end_log.datetime
-
-    @property
-    def start_timestamp(self):
-        return self.start_log.timestamp
-
-    @property
-    def end_timestamp(self):
-        return self.end_log.timestamp
-
-    @property
-    def duration(self):
-        return self.end_timestamp - self.start_timestamp
-
-    @property
-    def work_time(self):
-        return self.duration if self.is_work_interval else 0
-
-    def split(self, timestamp):
-        split_log = Log(timestamp, self.state)
-        assert self.start_log <= split_log <= self.end_log
-        return Interval(self.start_log, split_log), Interval(split_log, self.end_log)
-
-    def __eq__(self, other):
-        return self.start_log == other.start_log and self.end_log == other.end_log
-
-    def __repr__(self):
-        start_str = self.start_datetime.strftime("%Y-%m-%d %H:%M:%S")
-        return f"Interval<state:{self.state}, start:{start_str}, duration:{seconds_to_human_readable(self.duration)}>"
-
-
-def convert_logs_to_intervals(logs):
-    return [Interval(start_log, end_log) for start_log, end_log in zip(logs, logs[1:])]

@@ -2,7 +2,7 @@ import copy
 from datetime import datetime
 
 from worktime_tracker.logs import _ALL_LOGS, Log, get_all_logs, get_all_intervals, get_intervals, rewrite_history, Interval
-from worktime_tracker.worktime_tracker import get_work_time
+from worktime_tracker.worktime_tracker import get_worktime
 from worktime_tracker.test_utils import mock_log_file
 
 
@@ -50,11 +50,11 @@ def test_rewrite_history():
         Log(datetime(2021, 12, 7, 12, 30, 0), "personal"),
     ]
     with mock_log_file(mocked_logs):
-        assert get_work_time(datetime(2021, 12, 7, 8, 0, 0), datetime(2021, 12, 7, 13, 0, 0)) == 60 * 60
-        assert get_work_time(datetime(2021, 12, 7, 11, 0, 0), datetime(2021, 12, 7, 12, 0, 0)) == 30 * 60
+        assert get_worktime(datetime(2021, 12, 7, 8, 0, 0), datetime(2021, 12, 7, 13, 0, 0)) == 60 * 60
+        assert get_worktime(datetime(2021, 12, 7, 11, 0, 0), datetime(2021, 12, 7, 12, 0, 0)) == 30 * 60
         rewrite_history(datetime(2021, 12, 7, 10, 0, 0), datetime(2021, 12, 7, 12, 10, 0), "work")
         # Work from 10:00 to 12:30
-        assert get_work_time(datetime(2021, 12, 7, 8, 0, 0), datetime(2021, 12, 7, 13, 0, 0)) == 150 * 60
+        assert get_worktime(datetime(2021, 12, 7, 8, 0, 0), datetime(2021, 12, 7, 13, 0, 0)) == 150 * 60
         rewrite_history(datetime(2021, 12, 7, 11, 30, 0), datetime(2021, 12, 7, 12, 10, 0), "personal")
         # Work from 10:00 to 11:30 and from 12:10 to 12:30
-        assert get_work_time(datetime(2021, 12, 7, 8, 0, 0), datetime(2021, 12, 7, 13, 0, 0)) == 110 * 60
+        assert get_worktime(datetime(2021, 12, 7, 8, 0, 0), datetime(2021, 12, 7, 13, 0, 0)) == 110 * 60

@@ -17,10 +17,11 @@ from worktime_tracker.date_utils import (
     coerce_to_datetime,
     parse_time,
 )
+from worktime_tracker.history import History
 from worktime_tracker.utils import seconds_to_human_readable
-from worktime_tracker.worktime_tracker import get_work_time, get_days, get_work_time_from_weekday
-from worktime_tracker.logs import get_all_intervals, rewrite_history, read_first_log
-from worktime_tracker.worktime_tracker import WorktimeTracker, get_quantile_work_time_at
+from worktime_tracker.worktime_tracker import get_worktime, get_worktime_from_weekday
+from worktime_tracker.logs import rewrite_history, read_first_log
+from worktime_tracker.worktime_tracker import WorktimeTracker
 
 
 def rewrite_history_prompt():
@@ -56,21 +57,21 @@ def get_productivity_plot(start_datetime: datetime, end_datetime: datetime):
         table.append(
             {
                 # Very slow for old logs, would be better to use Discretizer
-                "work_time": get_work_time(coerce_to_datetime(bin_start), coerce_to_datetime(bin_end)),
+                "worktime": get_worktime(coerce_to_datetime(bin_start), coerce_to_datetime(bin_end)),
                 "bin_start": bin_start,
                 "bin_end": bin_end,
                 "formatted_start_time": format_timestamp(bin_start),
             }
         )
-    total_work_time = get_work_time(start_datetime, end_datetime)
+    total_worktime = get_worktime(start_datetime, end_datetime)
     df = pd.DataFrame(table).sort_values("bin_start")
-    df["work_time_m"] = df["work_time"] / 60
+    df["worktime_m"] = df["worktime"] / 60
     fig = px.histogram(
         df,
         x="formatted_start_time",
-        y="work_time_m",
+        y="worktime_m",
         histfunc="sum",
-        title=f"Total Work Time = {seconds_to_human_readable(total_work_time)}",
+        title=f"Total Work Time = {seconds_to_human_readable(total_worktime)}",
     )
     return fig
 
@@ -126,11 +127,11 @@ class Discretizer:
 
     def to_df(self):
         records = []
-        for timestamp, work_time in self.worktime_accumulator.items():
+        for timestamp, worktime in self.worktime_accumulator.items():
             dt = datetime.fromtimestamp(timestamp)
             records.append(
                 {
-                    "work_time": work_time,
+                    "worktime": worktime,
                     "start_datetime": dt,
                     "year": dt.year,
                     "month": dt.month,
@@ -148,21 +149,21 @@ class Discretizer:
 
 @lru_cache()
 def get_hourly_worktime_df():
-    intervals = get_all_intervals()
+    intervals = History().get_all_intervals()
     discretizer = Discretizer(step=3600)
     for interval in intervals:
         discretizer.add_interval(interval)
     df_hourly = discretizer.to_df()
-    df_hourly["work_time"] /= 3600
+    df_hourly["worktime"] /= 3600
     return df_hourly
 
 
 def get_daily_worktime_df():
     df_hourly = get_hourly_worktime_df()
-    daily_columns = [col for col in df_hourly.columns if col not in ["hour", "start_datetime", "work_time"]]
+    daily_columns = [col for col in df_hourly.columns if col not in ["hour", "start_datetime", "worktime"]]
     return (
-        df_hourly.groupby(daily_columns)["start_datetime", "work_time"]
-        .agg({"start_datetime": "min", "work_time": "sum"})
+        df_hourly.groupby(daily_columns)["start_datetime", "worktime"]
+        .agg({"start_datetime": "min", "worktime": "sum"})
         .reset_index()
     )
 
@@ -184,16 +185,33 @@ def create_ghost_plot(your_position, ghost_position, length=100):
     return f"[{plot}]"
 
 
+def get_worktimes_at(days, dt_time):
+    return [day.get_worktime_at(dt_time) for day in days if day.is_work_day()]
+
+
+def get_average_worktime_at(days, dt_time):
+    worktimes_at = get_worktimes_at(days, dt_time)
+    return sum(worktimes_at) / len(worktimes_at)
+
+
+def get_quantile_worktime_at(days, dt_time, quantile):
+    worktimes_at = get_worktimes_at(days, dt_time)
+    return np.quantile(worktimes_at, quantile)
+
+
 def get_ghost_plot(length=100):
     # TODO: Take timezone into account
-    days = get_days()
+    days = History().days
     target = WorktimeTracker.targets[get_current_weekday()]
     if target == 0:
         return ""
     # Higher quantile = ghost calibrated on your best days, lower quantile = ghost calibrated on your worst days
-    ghost_work_time = get_quantile_work_time_at(days, datetime.now().time(), quantile=0.75)
-    ghost_position = min(ghost_work_time / target, 1)
-    your_worktime = get_work_time_from_weekday(get_current_weekday())
+    #ghost_worktime = get_quantile_worktime_at(days, datetime.now().time(), quantile=0.75)
+    # HACK: -1h to take time difference between Paris and London into account
+    now_time = (datetime.now() - timedelta(hours=1)).time()
+    ghost_worktime = get_quantile_worktime_at(days, now_time, quantile=0.75)
+    ghost_position = min(ghost_worktime / target, 1)
+    your_worktime = get_worktime_from_weekday(get_current_weekday())
     your_position = min(your_worktime / target, 1)
     return create_ghost_plot(your_position=your_position, ghost_position=ghost_position, length=length)
 
