@@ -31,25 +31,24 @@ def get_date(dt):
     return (dt - timedelta(hours=DAY_START_HOUR)).date()
 
 
-def get_day_start(dt=None):
-    if dt is None:
-        dt = datetime.now()
-    d = get_date(dt)
-    return datetime(d.year, d.month, d.day, DAY_START_HOUR)
+def get_day_start(date_like=None):
+    if date_like is None:
+        date_like = datetime.now()
+    if isinstance(date_like, datetime):
+        date_like = get_date(date_like)
+    return datetime(date_like.year, date_like.month, date_like.day, DAY_START_HOUR)
 
 
-def get_day_end(dt=None):
-    if dt is None:
-        dt = datetime.now()
-    return get_day_start(dt) + timedelta(days=1)
+def get_day_end(date_like=None):
+    return get_day_start(date_like) + timedelta(days=1)
 
 
-def get_current_day_start():
-    return get_day_start(datetime.now())
+def get_current_day_start():  # Just an alias
+    return get_day_start()
 
 
-def get_current_day_end():
-    return get_day_end(datetime.now())
+def get_current_day_end():  # Just an alias
+    return get_day_end()
 
 
 def get_weekday_idx_from_datetime(dt):

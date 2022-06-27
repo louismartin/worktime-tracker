@@ -2,6 +2,7 @@ import time
 from functools import wraps
 
 import rumps
+from worktime_tracker.config import Config
 
 from worktime_tracker.constants import REFRESH_RATE
 from worktime_tracker.worktime_tracker import WorktimeTracker, get_work_ratio_since_timestamp
@@ -48,14 +49,18 @@ class StatusBarApp(rumps.App):
             # Update menu with new times
             self.menu.clear()
             self.menu = lines[1:][::-1]  # Sort days in chronological order
-            self.menu.add(get_ghost_plot(length=30))
+            if Config().show_day_worktime:
+                self.menu.add(get_ghost_plot(length=30))
             buttons_with_callbacks = {
-                "Plot productivity": discard_args(plot_productivity),  # The callbacks take a sender arg that we don't use
+                # The callbacks take a sender arg that we don't use
+                "Plot productivity": discard_args(plot_productivity),
                 # TODO: Find a way to get an input field for pause and rewrite history
                 "Pause (CLI)": discard_args(pause),
                 "Rewrite history (CLI)": discard_args(rewrite_history_prompt),
                 "Quit": rumps.quit_application,
             }
+            if not Config().show_day_worktime:
+                del buttons_with_callbacks["Plot productivity"]
             for button_name, callback in buttons_with_callbacks.items():
                 button = rumps.MenuItem(button_name)
                 button.set_callback(callback)
