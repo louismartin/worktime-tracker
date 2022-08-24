@@ -1,4 +1,5 @@
 import time
+from worktime_tracker.config import Config
 
 from worktime_tracker.worktime_tracker import WorktimeTracker
 from worktime_tracker.tools import pause, get_ghost_plot, rewrite_history_prompt, plot_productivity
@@ -10,8 +11,10 @@ def start():
     while True:
         try:
             worktime_tracker.check_state()
-            summaries = worktime_tracker.get_week_summaries()
-            print(" - ".join([get_ghost_plot(length=50)] + summaries) + "\r", end="")
+            summaries = [get_ghost_plot(length=50)]
+            if Config().show_day_worktime:
+                summaries.extend(worktime_tracker.get_week_summaries())
+            print(" - ".join( summaries) + "\r", end="")
             time.sleep(REFRESH_RATE)
         except KeyboardInterrupt:
             options_to_methods = {
