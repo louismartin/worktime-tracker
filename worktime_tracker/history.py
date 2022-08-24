@@ -151,7 +151,7 @@ class Day:
         return self.is_week_day() and self.worktime > 4 * 3600
 
     def __repr__(self) -> str:
-        return f"Day({self.date})"
+        return f"Day(date='{self.date}', worktime='{seconds_to_human_readable(self.worktime)}')"
 
 
 class Singleton(type):
@@ -167,6 +167,8 @@ class History(metaclass=Singleton):
     def __init__(self, dont_read_before=datetime.datetime.now() - datetime.timedelta(days=7)) -> None:
         print("Initializing history")
         self._days_dict = {}
+        # TODO: This should be stored in another variable as _last_read_log has other purposes
+        # TODO: We should raise an error when trying to get worktime before the dont_read_before date
         self._last_read_log = Log(dont_read_before.timestamp(), "dummy")
         self.refresh()
 
@@ -210,10 +212,14 @@ class History(metaclass=Singleton):
             logs = [last_log, *logs]  # Prepend last log to logs to count the initial interval
         return Interval.convert_logs_to_intervals(logs)
 
-    def get_worktime_between(self, start_datetime: datetime.datetime, end_datetime: datetime.datetime) -> float:
+    def get_worktime_between(self, start_datetime: datetime.datetime, end_datetime: datetime.datetime, dont_count_days: list[datetime.date] = None) -> float:
         assert start_datetime < end_datetime
         self.refresh()
-        return sum(day.get_worktime_between(start_datetime, end_datetime) for day in self.days)
+        print(dont_count_days)
+        if dont_count_days is None:
+            dont_count_days = []
+        return sum(day.get_worktime_between(start_datetime, end_datetime) for day in self.days
+        if day.date not in dont_count_days)
 
     def __getitem__(self, i) -> Day:
         """Get a specific day."""

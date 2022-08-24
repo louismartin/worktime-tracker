@@ -16,7 +16,7 @@ from worktime_tracker.logs import (Log, maybe_write_log,
                                    read_last_check_timestamp, read_last_log,
                                    write_last_check)
 from worktime_tracker.spaces import get_state
-from worktime_tracker.utils import seconds_to_human_readable, yield_lines
+from worktime_tracker.utils import seconds_to_human_readable, yield_lines_without_comments
 from worktime_tracker.history import History
 
 
@@ -29,7 +29,7 @@ def get_days_off():
     days_off = {}
     if not DAYS_OFF_PATH.exists():
         return days_off
-    for line in yield_lines(DAYS_OFF_PATH):
+    for line in yield_lines_without_comments(DAYS_OFF_PATH):
         # Parse date in the format 2022-03-19
         date, proportion, *_ = line.split("\t")
         days_off[datetime.strptime(date, "%Y-%m-%d").date()] = float(proportion)
@@ -40,10 +40,10 @@ def get_days_off():
 def get_dont_count_days():
     """``Don't count" days are used to remove some days from the worktime tracker entirely (e.g. conference days so that they don't count as undertime)."""
     # TODO: Not used yet
-    tdont_count_days = []
+    dont_count_days = []
     if not DONT_COUNT_DAYS_PATH.exists():
         return dont_count_days
-    for date in yield_lines(DONT_COUNT_DAYS_PATH):
+    for date in yield_lines_without_comments(DONT_COUNT_DAYS_PATH):
         # Parse date in the format 2022-03-19
         dont_count_days.append(datetime.strptime(date, "%Y-%m-%d").date())
     return dont_count_days
@@ -52,7 +52,8 @@ def get_dont_count_days():
 def get_worktime(start_datetime: datetime, end_datetime: datetime):
     # TODO: Deprecate this method and use History directly
     assert start_datetime <= end_datetime
-    return History().get_worktime_between(start_datetime, end_datetime)
+    history = History()  # Singleton
+    return history.get_worktime_between(start_datetime, end_datetime, dont_count_days=get_dont_count_days())
 
 
 def maybe_fix_unfinished_work_state():
@@ -85,9 +86,11 @@ def get_todays_worktime():
 
 
 def get_worktime_target_from_datetime(dt):
-    days_off = get_days_off()
-    day_off_proportion = days_off.get(dt.date(), 0)  # 1 means full day off, 0.5 half a day off, 0 not a day off
-    return WorktimeTracker.targets[get_weekday_idx_from_datetime(dt)] * (1 - day_off_proportion)
+    dont_count_proportion = get_days_off()
+    dont_count_proportion.update({date: 1 for date in get_dont_count_days()})
+    dont_count_proportion = dont_count_proportion.get(dt.date(), 0)  # 1 means full day off, 0.5 half a day off, 0 not a day off
+    print(dont_count_proportion)
+    return WorktimeTracker.targets[get_weekday_idx_from_datetime(dt)] * (1 - dont_count_proportion)
 
 
 def get_worktime_target_between(start_datetime, end_datetime):

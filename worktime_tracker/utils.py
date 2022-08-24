@@ -57,3 +57,11 @@ def yield_lines(filepath):
     with open(filepath, "r", encoding="utf8") as f:
         for line in f:
             yield line.strip("\n")
+
+
+def yield_lines_without_comments(filepath):
+    for line in yield_lines(filepath):
+        line, _ = line.split("#", 1)
+        line = line.rstrip(" ")
+        if line != "":
+            yield line
