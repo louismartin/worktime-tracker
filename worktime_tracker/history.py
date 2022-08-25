@@ -177,6 +177,11 @@ class Singleton(type):
 class History(metaclass=Singleton):
     """Singleton class that tracks the history of worktimes organized by days and intervals."""
 
+    @staticmethod
+    def clear() -> None:
+        """Clear the history singleton"""
+        History._instances.clear()
+
     def __init__(self, dont_read_before=datetime.datetime.now() - datetime.timedelta(days=7)) -> None:
         print("Initializing history")
         self._days_dict = {}

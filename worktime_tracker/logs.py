@@ -3,6 +3,7 @@ import shutil
 import datetime
 
 from worktime_tracker.constants import STATES_TYPE, LOGS_PATH, LAST_CHECK_PATH
+from worktime_tracker.history import History
 from worktime_tracker.utils import reverse_read_lines
 from worktime_tracker.date_utils import coerce_to_timestamp
 
@@ -126,20 +127,23 @@ def get_rewritten_history_logs(
     return logs_before + [(start_timestamp, new_state)] + logs_after
 
 
+def get_all_logs():
+    return [log for log in reverse_read_logs()][::-1]
+
+
 def rewrite_history(start_datetime: datetime.datetime, end_datetime: datetime.datetime, new_state: STATES_TYPE) -> None:
-    raise NotImplementedError  # TODO: Reimplement
-    # # Careful, this methods rewrites the entire log file
-    # backup_dir = LOGS_PATH.parent / "backup"
-    # backup_dir.mkdir(exist_ok=True)
-    # shutil.copy(LOGS_PATH, backup_dir / f"{LOGS_PATH.name}.bck{int(time.time())}")
-    # logs = get_all_logs()
-    # logs += [Log(time.time(), "locked")]  # So that we take the last interval into account
-    # # TODO: Rewrite the function to use the Log class
-    # new_logs = get_rewritten_history_logs(start_datetime, end_datetime, new_state, logs)
-    # with LOGS_PATH.open("w") as f:
-    #     for timestamp, state in new_logs:
-    #         f.write(f"{timestamp}\t{state}\n")
-    # _ALL_LOGS[:] = []  # Reset logs
+    # Careful, this methods rewrites the entire log file
+    backup_dir = LOGS_PATH.parent / "backup"
+    backup_dir.mkdir(exist_ok=True)
+    shutil.copy(LOGS_PATH, backup_dir / f"{LOGS_PATH.name}.bck{int(time.time())}")
+    logs = get_all_logs()
+    logs += [Log(time.time(), "locked")]  # So that we take the last interval into account
+    # TODO: Rewrite the function to use the Log class
+    new_logs = get_rewritten_history_logs(logs, start_datetime, end_datetime, new_state)
+    with LOGS_PATH.open("w") as f:
+        for timestamp, state in new_logs:
+            f.write(f"{timestamp}\t{state}\n")
+    History.clear()
 
 
 def remove_identical_consecutive_states(logs):
