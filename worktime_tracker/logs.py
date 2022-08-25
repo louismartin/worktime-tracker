@@ -11,6 +11,7 @@ class Log:
     """Represents a log entry at a single point of time, basically containing a timestamp and a state.
     It is supposed to match the format of the logs file.
     """
+
     def __init__(self, timestamp: float, state: STATES_TYPE) -> None:
         self.timestamp = coerce_to_timestamp(timestamp)
         self.state = state
@@ -94,7 +95,9 @@ def read_first_log() -> Log:
         return parse_log_line(first_line)
 
 
-def get_rewritten_history_logs(logs: list[Log], start_datetime: datetime.datetime, end_datetime: datetime.datetime, new_state: STATES_TYPE) -> list[Log]:
+def get_rewritten_history_logs(
+    logs: list[Log], start_datetime: datetime.datetime, end_datetime: datetime.datetime, new_state: STATES_TYPE
+) -> list[Log]:
     # TODO: adapt function to use the Log class and datetimes
     start_timestamp = start_datetime.timestamp()
     end_timestamp = end_datetime.timestamp()
@@ -151,4 +154,3 @@ def remove_identical_consecutive_states(logs):
         new_logs.append((timestamp, state))
         previous_state = state
     return new_logs
-

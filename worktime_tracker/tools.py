@@ -206,7 +206,7 @@ def get_ghost_plot(length=100):
     if target == 0:
         return ""
     # Higher quantile = ghost calibrated on your best days, lower quantile = ghost calibrated on your worst days
-    #ghost_worktime = get_quantile_worktime_at(days, datetime.now().time(), quantile=0.75)
+    # ghost_worktime = get_quantile_worktime_at(days, datetime.now().time(), quantile=0.75)
     # HACK: -1h to take time difference between Paris and London into account
     now_time = (datetime.now() - timedelta(hours=1)).time()
     ghost_worktime = get_quantile_worktime_at(days, now_time, quantile=0.75)

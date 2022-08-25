@@ -10,9 +10,12 @@ from worktime_tracker.utils import seconds_to_human_readable
 
 class Interval:
     """Represents an interval of time associated to a given state, i.e. a start and end log."""
+
     def __init__(self, start_log: Log, end_log: Log):
         assert start_log <= end_log
-        assert end_log.timestamp - start_log.timestamp <= 365 * 24 * 60 * 60, f"Intervals cannot be longer than 1 year: {start_log=}, {end_log=}"
+        assert (
+            end_log.timestamp - start_log.timestamp <= 365 * 24 * 60 * 60
+        ), f"Intervals cannot be longer than 1 year: {start_log=}, {end_log=}"
         self.start_log = start_log
         self.end_log = end_log
 
@@ -37,13 +40,14 @@ class Interval:
             print(interval)
             raise e
 
-
     @staticmethod
     def split_intervals_by_day(intervals: list["Interval"]) -> list["Interval"]:
         return [split_interval for interval in intervals for split_interval in Interval.split_interval_by_day(interval)]
 
     @staticmethod
-    def get_intervals_between(intervals: list["Interval"], start_datetime: datetime.datetime, end_datetime: datetime.datetime):
+    def get_intervals_between(
+        intervals: list["Interval"], start_datetime: datetime.datetime, end_datetime: datetime.datetime
+    ):
         """Get intervals between start_datetime and end_datetime"""
         assert start_datetime <= end_datetime
         intervals_between = []
@@ -111,7 +115,9 @@ class Day:
         return self.intervals[-1]
 
     def add_interval(self, interval: Interval) -> None:
-        assert self.day_start <= interval.start_datetime <= interval.end_datetime <= self.day_end, f"Failed assertion: {self.day_start} <= {interval.start_datetime} <= {interval.end_datetime} <= {self.day_end}"
+        assert (
+            self.day_start <= interval.start_datetime <= interval.end_datetime <= self.day_end
+        ), f"Failed assertion: {self.day_start} <= {interval.start_datetime} <= {interval.end_datetime} <= {self.day_end}"
         # Check that the new interval is not overlapping with the last one
         if self.last_interval is not None and self.last_interval.start_log == interval.start_log:
             # If the last interval is starts at the same moment as the new one, it's probably because it was a dummy one that was added programmatically
@@ -119,9 +125,10 @@ class Day:
             # print(f"Removing dummy interval {self.last_interval} in favor of {interval}")
             self.intervals.pop()
         if self.last_interval is not None:
-            assert self.last_interval.end_datetime <= interval.start_datetime, f"Failed assertion: {self.last_interval} <= {interval}"
+            assert (
+                self.last_interval.end_datetime <= interval.start_datetime
+            ), f"Failed assertion: {self.last_interval} <= {interval}"
         self.intervals.append(interval)
-
 
     @property
     def work_intervals(self) -> list[Interval]:
@@ -129,7 +136,10 @@ class Day:
 
     def get_worktime_between(self, start_datetime: datetime.datetime, end_datetime: datetime.datetime) -> float:
         """Get the worktime between start_datetime and end_datetime"""
-        return sum(interval.worktime for interval in Interval.get_intervals_between(self.intervals, start_datetime, end_datetime))
+        return sum(
+            interval.worktime
+            for interval in Interval.get_intervals_between(self.intervals, start_datetime, end_datetime)
+        )
 
     def get_worktime_at(self, dt_time: datetime.time) -> float:
         assert isinstance(dt_time, datetime.time)
@@ -157,6 +167,7 @@ class Day:
 
 class Singleton(type):
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
@@ -165,6 +176,7 @@ class Singleton(type):
 
 class History(metaclass=Singleton):
     """Singleton class that tracks the history of worktimes organized by days and intervals."""
+
     def __init__(self, dont_read_before=datetime.datetime.now() - datetime.timedelta(days=7)) -> None:
         print("Initializing history")
         self._days_dict = {}
@@ -213,13 +225,21 @@ class History(metaclass=Singleton):
             logs = [last_log, *logs]  # Prepend last log to logs to count the initial interval
         return Interval.convert_logs_to_intervals(logs)
 
-    def get_worktime_between(self, start_datetime: datetime.datetime, end_datetime: datetime.datetime, dont_count_days: list[datetime.date] = None) -> float:
+    def get_worktime_between(
+        self,
+        start_datetime: datetime.datetime,
+        end_datetime: datetime.datetime,
+        dont_count_days: list[datetime.date] = None,
+    ) -> float:
         assert start_datetime < end_datetime
         self.refresh()
         if dont_count_days is None:
             dont_count_days = []
-        return sum(day.get_worktime_between(start_datetime, end_datetime) for day in self.days
-        if day.date not in dont_count_days)
+        return sum(
+            day.get_worktime_between(start_datetime, end_datetime)
+            for day in self.days
+            if day.date not in dont_count_days
+        )
 
     def __getitem__(self, i) -> Day:
         """Get a specific day."""

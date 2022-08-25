@@ -1,7 +1,15 @@
 import copy
 from datetime import datetime
 
-from worktime_tracker.logs import _ALL_LOGS, Log, get_all_logs, get_all_intervals, get_intervals, rewrite_history, Interval
+from worktime_tracker.logs import (
+    _ALL_LOGS,
+    Log,
+    get_all_logs,
+    get_all_intervals,
+    get_intervals,
+    rewrite_history,
+    Interval,
+)
 from worktime_tracker.worktime_tracker import get_worktime
 from worktime_tracker.test_utils import mock_log_file
 
@@ -22,7 +30,9 @@ def test_get_intervals():
         assert get_intervals(start_datetime, end_datetime) == [
             Interval(Log(datetime(2021, 12, 8, 7, 0, 0), "locked"), Log(datetime(2021, 12, 8, 17, 6, 13), "work")),
             Interval(Log(datetime(2021, 12, 8, 17, 6, 13), "work"), Log(datetime(2021, 12, 8, 17, 24, 18), "personal")),
-            Interval(Log(datetime(2021, 12, 8, 17, 24, 18), "personal"), Log(datetime(2021, 12, 9, 7, 0, 0), "personal")),
+            Interval(
+                Log(datetime(2021, 12, 8, 17, 24, 18), "personal"), Log(datetime(2021, 12, 9, 7, 0, 0), "personal")
+            ),
         ]
         # Check that global variable _ALL_LOGS is not modified
         assert initial_logs == _ALL_LOGS

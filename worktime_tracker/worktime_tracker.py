@@ -5,16 +5,18 @@ from functools import lru_cache
 
 from worktime_tracker.config import Config
 from worktime_tracker.constants import DONT_COUNT_DAYS_PATH, WORK_STATES, DAYS_OFF_PATH
-from worktime_tracker.date_utils import (WEEKDAYS, coerce_to_datetime,
-                                         get_current_weekday,
-                                         get_day_start, get_month_start,
-                                         get_week_start,
-                                         get_weekday_idx_from_datetime,
-                                         get_weekday_start_and_end,
-                                         get_year_start)
-from worktime_tracker.logs import (Log, maybe_write_log,
-                                   read_last_check_timestamp, read_last_log,
-                                   write_last_check)
+from worktime_tracker.date_utils import (
+    WEEKDAYS,
+    coerce_to_datetime,
+    get_current_weekday,
+    get_day_start,
+    get_month_start,
+    get_week_start,
+    get_weekday_idx_from_datetime,
+    get_weekday_start_and_end,
+    get_year_start,
+)
+from worktime_tracker.logs import Log, maybe_write_log, read_last_check_timestamp, read_last_log, write_last_check
 from worktime_tracker.spaces import get_state
 from worktime_tracker.utils import seconds_to_human_readable, yield_lines_without_comments
 from worktime_tracker.history import History
@@ -23,7 +25,7 @@ from worktime_tracker.history import History
 @lru_cache
 def get_days_off():
     """Days off are used to set the target of days off to 0.
-    
+
     Returns a dict of dates to day off proportion (e.g. 1 means full day off, 0.5 half a day off, 0 not a day off)
     """
     days_off = {}
@@ -88,7 +90,9 @@ def get_todays_worktime():
 def get_worktime_target_from_datetime(dt):
     dont_count_proportion = get_days_off()
     dont_count_proportion.update({date: 1 for date in get_dont_count_days()})
-    dont_count_proportion = dont_count_proportion.get(dt.date(), 0)  # 1 means full day off, 0.5 half a day off, 0 not a day off
+    dont_count_proportion = dont_count_proportion.get(
+        dt.date(), 0
+    )  # 1 means full day off, 0.5 half a day off, 0 not a day off
     return WorktimeTracker.targets[get_weekday_idx_from_datetime(dt)] * (1 - dont_count_proportion)
 
 
@@ -169,5 +173,9 @@ class WorktimeTracker:
     def get_week_summaries(self):
         """Nicely formatted day summaries for displaying to the user"""
         summaries = [self.get_weekday_summary(weekday_idx) for weekday_idx in range(get_current_weekday() + 1)][::-1]
-        summaries += [self.get_year_overtime_summary(), self.get_month_overtime_summary(), self.get_week_overtime_summary()]
+        summaries += [
+            self.get_year_overtime_summary(),
+            self.get_month_overtime_summary(),
+            self.get_week_overtime_summary(),
+        ]
         return summaries
