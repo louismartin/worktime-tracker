@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from functools import lru_cache
 import subprocess
 import time
+import tempfile
 
 import numpy as np
 import pandas as pd
@@ -82,7 +83,10 @@ def get_todays_productivity_plot():
     return get_productivity_plot(start_datetime, end_datetime)
 
 
-def download_productivity_plot(path="productivity_plot.png"):
+def download_productivity_plot(path=None):
+    if path is None:
+        # Temporary path
+        path = tempfile.mktemp(suffix=".png")
     get_todays_productivity_plot().write_image(path)
     return path
 
