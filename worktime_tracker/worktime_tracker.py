@@ -88,11 +88,15 @@ def get_todays_worktime():
 
 
 def get_worktime_target_from_datetime(dt):
+    if dt in get_dont_count_days():
+        return 0
+    if dt.date() not in [day.date for day in History().days if day.worktime > 0]:
+        # TODO: If that's too slow we can only compare to the oldest day in the history
+        # Don't consider days that where not worked
+        return 0
+    # 1 means full day off, 0.5 half a day off, 0 not a day off
     dont_count_proportion = get_days_off()
-    dont_count_proportion.update({date: 1 for date in get_dont_count_days()})
-    dont_count_proportion = dont_count_proportion.get(
-        dt.date(), 0
-    )  # 1 means full day off, 0.5 half a day off, 0 not a day off
+    dont_count_proportion = dont_count_proportion.get(dt.date(), 0)
     return WorktimeTracker.targets[get_weekday_idx_from_datetime(dt)] * (1 - dont_count_proportion)
 
 

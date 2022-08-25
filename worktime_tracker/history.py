@@ -182,13 +182,14 @@ class History(metaclass=Singleton):
         """Clear the history singleton"""
         History._instances.clear()
 
-    def __init__(self, dont_read_before=datetime.datetime.now() - datetime.timedelta(days=7)) -> None:
-        print("Initializing history")
+    def __init__(self, dont_read_before=datetime.datetime.now() - datetime.timedelta(days=365)) -> None:
+        print("Initializing history...")
         self._days_dict = {}
-        # TODO: This should be stored in another variable as _last_read_log has other purposes
         # TODO: We should raise an error when trying to get worktime before the dont_read_before date
-        self._last_read_log = Log(dont_read_before.timestamp(), "dummy")
+        self.dont_read_before = dont_read_before
+        self._last_read_log = None
         self.refresh()
+        print("History initialized")
 
     @property
     def days(self):
@@ -213,6 +214,8 @@ class History(metaclass=Singleton):
         new_logs = []
         # Read file in reverse to find new logs that are not loaded yet
         for log in reverse_read_logs():
+            if log.datetime <= self.dont_read_before:
+                break
             if self._last_read_log is not None and log <= self._last_read_log:
                 break
             new_logs.append(log)
@@ -227,6 +230,8 @@ class History(metaclass=Singleton):
         # Add dummy log so that we take the last interval into account
         logs = [*new_logs, Log(time.time(), "dummy")]
         if last_log is not None:
+            # FIXME: Sometimes the last log is more recent that logs[0]
+            # I.e. I hust had the result being: [Log<date=2021-08-25 18:01:05, state=dummy>, Log<date=2022-08-25 17:59:58, state=personal>, Log<date=2022-08-25 18:02:04, state=dummy>]
             logs = [last_log, *logs]  # Prepend last log to logs to count the initial interval
         return Interval.convert_logs_to_intervals(logs)
 

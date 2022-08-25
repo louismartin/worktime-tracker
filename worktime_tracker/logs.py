@@ -3,7 +3,6 @@ import shutil
 import datetime
 
 from worktime_tracker.constants import STATES_TYPE, LOGS_PATH, LAST_CHECK_PATH
-from worktime_tracker.history import History
 from worktime_tracker.utils import reverse_read_lines
 from worktime_tracker.date_utils import coerce_to_timestamp
 
@@ -132,6 +131,8 @@ def get_all_logs():
 
 
 def rewrite_history(start_datetime: datetime.datetime, end_datetime: datetime.datetime, new_state: STATES_TYPE) -> None:
+    from worktime_tracker.history import History  # Circular import
+
     # Careful, this methods rewrites the entire log file
     backup_dir = LOGS_PATH.parent / "backup"
     backup_dir.mkdir(exist_ok=True)
