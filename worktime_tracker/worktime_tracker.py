@@ -89,7 +89,6 @@ def get_worktime_target_from_datetime(dt):
     dont_count_proportion = get_days_off()
     dont_count_proportion.update({date: 1 for date in get_dont_count_days()})
     dont_count_proportion = dont_count_proportion.get(dt.date(), 0)  # 1 means full day off, 0.5 half a day off, 0 not a day off
-    print(dont_count_proportion)
     return WorktimeTracker.targets[get_weekday_idx_from_datetime(dt)] * (1 - dont_count_proportion)
 
 

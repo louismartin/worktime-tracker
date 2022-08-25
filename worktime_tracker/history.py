@@ -104,23 +104,24 @@ class Day:
         self.day_start = get_day_start(date)
         self.day_end = get_day_end(date)
 
+    @property
+    def last_interval(self):
+        if len(self.intervals) == 0:
+            return None
+        return self.intervals[-1]
+
     def add_interval(self, interval: Interval) -> None:
         assert self.day_start <= interval.start_datetime <= interval.end_datetime <= self.day_end, f"Failed assertion: {self.day_start} <= {interval.start_datetime} <= {interval.end_datetime} <= {self.day_end}"
-        self.maybe_pop_last_dummy_interval(interval)
-        if len(self.intervals) > 0:
-            # Check that the new interval is not overlapping with the last one
-            last_interval = self.intervals[-1]
-            assert last_interval.end_datetime <= interval.start_datetime, f"Failed assertion: {last_interval} <= {interval}"
+        # Check that the new interval is not overlapping with the last one
+        if self.last_interval is not None and self.last_interval.start_log == interval.start_log:
+            # If the last interval is starts at the same moment as the new one, it's probably because it was a dummy one that was added programmatically
+            # TODO: It seems that there are many dummy intervals, double check that everything works well
+            # print(f"Removing dummy interval {self.last_interval} in favor of {interval}")
+            self.intervals.pop()
+        if self.last_interval is not None:
+            assert self.last_interval.end_datetime <= interval.start_datetime, f"Failed assertion: {self.last_interval} <= {interval}"
         self.intervals.append(interval)
 
-    def maybe_pop_last_dummy_interval(self, interval: Interval) -> None:
-        """If the last interval is starts at the same moment as the new one, it's either because it was a dummy one that was updated"""
-        if len(self.intervals) == 0:
-            return
-        last_interval = self.intervals[-1]
-        if last_interval.start_log == interval.start_log:
-            print(f"Removing dummy interval {last_interval}")
-            self.intervals.pop()
 
     @property
     def work_intervals(self) -> list[Interval]:
@@ -215,7 +216,6 @@ class History(metaclass=Singleton):
     def get_worktime_between(self, start_datetime: datetime.datetime, end_datetime: datetime.datetime, dont_count_days: list[datetime.date] = None) -> float:
         assert start_datetime < end_datetime
         self.refresh()
-        print(dont_count_days)
         if dont_count_days is None:
             dont_count_days = []
         return sum(day.get_worktime_between(start_datetime, end_datetime) for day in self.days

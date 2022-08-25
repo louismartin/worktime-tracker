@@ -61,7 +61,7 @@ def yield_lines(filepath):
 
 def yield_lines_without_comments(filepath):
     for line in yield_lines(filepath):
-        line, _ = line.split("#", 1)
+        line, *_ = line.split("#", 1)
         line = line.rstrip(" ")
         if line != "":
             yield line
