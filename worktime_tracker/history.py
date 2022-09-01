@@ -241,7 +241,7 @@ class History(metaclass=Singleton):
         end_datetime: datetime.datetime,
         dont_count_days: list[datetime.date] = None,
     ) -> float:
-        assert start_datetime < end_datetime
+        assert start_datetime <= end_datetime, f"Failed assertion: {start_datetime} <= {end_datetime}"
         self.refresh()
         if dont_count_days is None:
             dont_count_days = []
