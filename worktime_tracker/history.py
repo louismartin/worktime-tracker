@@ -18,6 +18,8 @@ class Interval:
         ), f"Intervals cannot be longer than 1 year: {start_log=}, {end_log=}"
         self.start_log = start_log
         self.end_log = end_log
+        self.start_datetime = start_log.datetime
+        self.end_datetime = end_log.datetime
 
     @staticmethod
     def convert_logs_to_intervals(logs: list[Log]) -> list["Interval"]:
@@ -69,14 +71,6 @@ class Interval:
     @property
     def is_work_interval(self) -> bool:
         return self.state in WORK_STATES
-
-    @property
-    def start_datetime(self) -> datetime.datetime:
-        return self.start_log.datetime
-
-    @property
-    def end_datetime(self) -> datetime.datetime:
-        return self.end_log.datetime
 
     @property
     def duration(self) -> float:
@@ -182,12 +176,15 @@ class History(metaclass=Singleton):
         """Clear the history singleton"""
         History._instances.clear()
 
-    def __init__(self, dont_read_before=datetime.datetime.now() - datetime.timedelta(days=365)) -> None:
+    def __init__(self, dont_read_before=datetime.datetime.now() - datetime.timedelta(days=365), refresh_rate=1) -> None:
+        # TODO: The singleton does not refresh if we call it with different arguments
         print("Initializing history...")
         self._days_dict = {}
         # TODO: We should raise an error when trying to get worktime before the dont_read_before date
         self.dont_read_before = dont_read_before
         self._last_read_log = None
+        self._last_refresh = None
+        self.refresh_rate = refresh_rate
         self.refresh()
         print("History initialized")
 
@@ -201,7 +198,10 @@ class History(metaclass=Singleton):
         return [interval for day in self.days for interval in day.intervals]
 
     def refresh(self) -> None:
+        if self._last_refresh is not None and time.time() - self._last_refresh < self.refresh_rate:
+            return
         self.add_intervals(self.get_new_intervals())
+        self._last_refresh = time.time()
 
     def add_intervals(self, intervals: list[Interval]) -> None:
         for interval in Interval.split_intervals_by_day(intervals):
@@ -245,11 +245,11 @@ class History(metaclass=Singleton):
         self.refresh()
         if dont_count_days is None:
             dont_count_days = []
-        return sum(
-            day.get_worktime_between(start_datetime, end_datetime)
-            for day in self.days
-            if day.date not in dont_count_days
-        )
+        # Assign the date to a variable as it might be can be called millions of times
+        start_date = start_datetime.date()
+        end_date = end_datetime.date()
+        days = [day for day in self.days if start_date <= day.date <= end_date and day.date not in dont_count_days]
+        return sum(day.get_worktime_between(start_datetime, end_datetime) for day in days)
 
     def __getitem__(self, i) -> Day:
         """Get a specific day."""

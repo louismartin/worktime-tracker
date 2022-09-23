@@ -14,11 +14,8 @@ class Log:
 
     def __init__(self, timestamp: float, state: STATES_TYPE) -> None:
         self.timestamp = coerce_to_timestamp(timestamp)
+        self.datetime = datetime.datetime.fromtimestamp(self.timestamp)
         self.state = state
-
-    @property
-    def datetime(self) -> datetime.datetime:
-        return datetime.datetime.fromtimestamp(self.timestamp)
 
     def __repr__(self) -> str:
         date_str = self.datetime.strftime("%Y-%m-%d %H:%M:%S")
