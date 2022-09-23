@@ -51,7 +51,7 @@ def get_dont_count_days():
     return dont_count_days
 
 
-def get_worktime(start_datetime: datetime, end_datetime: datetime):
+def get_worktime_between(start_datetime: datetime, end_datetime: datetime):
     # TODO: Deprecate this method and use History directly
     assert start_datetime <= end_datetime
     history = History()  # Singleton
@@ -74,13 +74,13 @@ def maybe_fix_unfinished_work_state():
 
 def get_work_ratio_since_timestamp(start_timestamp):
     end_datetime = datetime.now()
-    worktime = get_worktime(start_datetime=coerce_to_datetime(start_timestamp), end_datetime=datetime.now())
+    worktime = get_worktime_between(start_datetime=coerce_to_datetime(start_timestamp), end_datetime=datetime.now())
     return worktime / (end_datetime.timestamp() - start_timestamp)
 
 
 def get_worktime_from_weekday(weekday):
     weekday_start, weekday_end = get_weekday_start_and_end(weekday)
-    return get_worktime(weekday_start, weekday_end)
+    return get_worktime_between(weekday_start, weekday_end)
 
 
 def get_todays_worktime():
@@ -108,7 +108,7 @@ def get_worktime_target_between(start_datetime, end_datetime):
 
 
 def get_overtime_between(start_datetime, end_datetime):
-    worktime = get_worktime(start_datetime, end_datetime)
+    worktime = get_worktime_between(start_datetime, end_datetime)
     target = get_worktime_target_between(start_datetime, end_datetime)
     return worktime - target
 

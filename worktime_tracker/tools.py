@@ -20,7 +20,7 @@ from worktime_tracker.date_utils import (
 )
 from worktime_tracker.history import History
 from worktime_tracker.utils import seconds_to_human_readable
-from worktime_tracker.worktime_tracker import get_worktime, get_worktime_from_weekday
+from worktime_tracker.worktime_tracker import get_worktime_between, get_worktime_from_weekday
 from worktime_tracker.logs import rewrite_history
 from worktime_tracker.worktime_tracker import WorktimeTracker
 
@@ -58,13 +58,13 @@ def get_productivity_plot(start_datetime: datetime, end_datetime: datetime):
         table.append(
             {
                 # Very slow for old logs, would be better to use Discretizer
-                "worktime": get_worktime(coerce_to_datetime(bin_start), coerce_to_datetime(bin_end)),
+                "worktime": get_worktime_between(coerce_to_datetime(bin_start), coerce_to_datetime(bin_end)),
                 "bin_start": bin_start,
                 "bin_end": bin_end,
                 "formatted_start_time": format_timestamp(bin_start),
             }
         )
-    total_worktime = get_worktime(start_datetime, end_datetime)
+    total_worktime = get_worktime_between(start_datetime, end_datetime)
     df = pd.DataFrame(table).sort_values("bin_start")
     df["worktime_m"] = df["worktime"] / 60
     fig = px.histogram(
