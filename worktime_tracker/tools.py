@@ -21,7 +21,7 @@ from worktime_tracker.date_utils import (
 from worktime_tracker.history import History
 from worktime_tracker.utils import seconds_to_human_readable
 from worktime_tracker.worktime_tracker import get_worktime, get_worktime_from_weekday
-from worktime_tracker.logs import rewrite_history, read_first_log
+from worktime_tracker.logs import rewrite_history
 from worktime_tracker.worktime_tracker import WorktimeTracker
 
 
@@ -117,7 +117,9 @@ class Discretizer:
     def add_interval(self, interval):
         if interval.state not in WORK_STATES:
             return
-        assert self.first_timestamp <= interval.start_timestamp and interval.end_timestamp <= self.last_timestamp
+        assert (
+            self.first_timestamp <= interval.start_log.start_timestamp and interval.end_timestamp <= self.last_timestamp
+        )
         n_steps_since_start = (interval.start_timestamp - self.first_timestamp) // self.step
         bin_start = self.first_timestamp + n_steps_since_start * self.step
         bin_end = bin_start + self.step
@@ -153,7 +155,7 @@ class Discretizer:
 
 @lru_cache()
 def get_hourly_worktime_df():
-    intervals = History().get_all_intervals()
+    intervals = History().all_intervals
     discretizer = Discretizer(step=3600)
     for interval in intervals:
         discretizer.add_interval(interval)

@@ -83,15 +83,6 @@ def read_last_log() -> Log:
         return None
 
 
-def read_first_log() -> Log:
-    with open(LOGS_PATH, "r", encoding="utf8") as f:
-        try:
-            first_line = next(f)
-        except StopIteration:
-            return None
-        return parse_log_line(first_line)
-
-
 def get_rewritten_history_logs(
     logs: list[Log], start_datetime: datetime.datetime, end_datetime: datetime.datetime, new_state: STATES_TYPE
 ) -> list[Log]:
