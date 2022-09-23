@@ -159,16 +159,18 @@ class Day:
         return f"Day(date='{self.date}', worktime='{seconds_to_human_readable(self.worktime)}')"
 
 
-class Singleton(type):
+class ArgsSingleton(type):
+    """Creates only one instance per set of arguments"""
     _instances = {}
-
     def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+        key = (cls, args, tuple(kwargs.items()))
+        if key not in cls._instances:
+            cls._instances[key] = super(ArgsSingleton, cls).__call__(*args, **kwargs)
+        return cls._instances[key]
 
 
-class History(metaclass=Singleton):
+
+class History(metaclass=ArgsSingleton):
     """Singleton class that tracks the history of worktimes organized by days and intervals."""
 
     @staticmethod
@@ -177,7 +179,6 @@ class History(metaclass=Singleton):
         History._instances.clear()
 
     def __init__(self, dont_read_before=datetime.datetime.now() - datetime.timedelta(days=365), refresh_rate=1) -> None:
-        # TODO: The singleton does not refresh if we call it with different arguments
         print("Initializing history...")
         self._days_dict = {}
         # TODO: We should raise an error when trying to get worktime before the dont_read_before date
