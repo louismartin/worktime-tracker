@@ -182,7 +182,7 @@ class History(metaclass=ArgsSingleton):
         print("Initializing history...")
         self._days_dict = {}
         # TODO: We should raise an error when trying to get worktime before the dont_read_before date
-        self.dont_read_before = dont_read_before
+        self.dont_read_before = dont_read_before if dont_read_before is not None else datetime.datetime.min
         self._last_read_log = None
         self._last_refresh = None
         self.refresh_rate = refresh_rate

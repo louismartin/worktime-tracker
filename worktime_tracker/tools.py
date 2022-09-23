@@ -1,5 +1,4 @@
-from collections import defaultdict
-from datetime import datetime, timedelta
+import datetime
 from functools import lru_cache
 import subprocess
 import time
@@ -26,24 +25,26 @@ from worktime_tracker.worktime_tracker import WorktimeTracker
 
 
 def rewrite_history_prompt():
-    now = datetime.now()
+    now = datetime.datetime.now()
     start = input("Start time? (hh:mm): ")
     start_hour, start_minute = [int(x) for x in start.split(":")]
     end = input("End time? (hh:mm): ")
     end_hour, end_minute = [int(x) for x in end.split(":")]
     day_offset = input("Day offset? (default=0): ")
     day_offset = int(day_offset) if day_offset != "" else 0
-    start_datetime = (now + timedelta(days=day_offset)).replace(
+    start_datetime = (now + datetime.timedelta(days=day_offset)).replace(
         hour=start_hour, minute=start_minute, second=0, microsecond=0
     )
-    end_datetime = (now + timedelta(days=day_offset)).replace(hour=end_hour, minute=end_minute, second=0, microsecond=0)
+    end_datetime = (now + datetime.timedelta(days=day_offset)).replace(
+        hour=end_hour, minute=end_minute, second=0, microsecond=0
+    )
     new_state = input("New state?: ")
     rewrite_history(start_datetime, end_datetime, new_state)
 
 
 def get_productivity_plot(start_datetime: datetime, end_datetime: datetime):
     def format_timestamp(timestamp):
-        d = datetime.fromtimestamp(timestamp)
+        d = datetime.datetime.fromtimestamp(timestamp)
         return f"{d.hour}h{d.minute:02d}"
 
     start_timestamp = start_datetime.timestamp()
@@ -79,7 +80,7 @@ def get_productivity_plot(start_datetime: datetime, end_datetime: datetime):
 
 def get_todays_productivity_plot():
     start_datetime = get_current_day_start()
-    end_datetime = min(get_current_day_end(), datetime.now())
+    end_datetime = min(get_current_day_end(), datetime.datetime.now())
     return get_productivity_plot(start_datetime, end_datetime)
 
 
@@ -97,71 +98,36 @@ def plot_productivity():
     subprocess.run(["open", productivity_plot_path], check=True)
 
 
-class Discretizer:
-    def __init__(self, step, add_empty_bins=True):
-        first_log = read_first_log()
-        first_datetime = first_log.datetime.replace(minute=0, second=0, microsecond=0)
-        last_datetime = (datetime.now() + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
-        self.first_timestamp = first_datetime.timestamp()
-        self.last_timestamp = last_datetime.timestamp()
-        self.step = step
-        if add_empty_bins:
-            self.worktime_accumulator = {bin_start: 0 for bin_start in self.get_bin_starts()}
-        else:
-            self.worktime_accumulator = defaultdict(float)
-
-    def get_bin_starts(self):
-        n_bins = int((self.last_timestamp - self.first_timestamp) // self.step)
-        return [self.first_timestamp + i * self.step for i in range(n_bins)]
-
-    def add_interval(self, interval):
-        if interval.state not in WORK_STATES:
-            return
-        assert (
-            self.first_timestamp <= interval.start_log.start_timestamp and interval.end_timestamp <= self.last_timestamp
-        )
-        n_steps_since_start = (interval.start_timestamp - self.first_timestamp) // self.step
-        bin_start = self.first_timestamp + n_steps_since_start * self.step
-        bin_end = bin_start + self.step
-        if interval.end_timestamp > bin_end:
-            # print("Split ", interval, bin_start, bin_end)
-            for split_interval in interval.split(bin_end):
-                self.add_interval(split_interval)
-        else:
-            # print("Accumulating", interval, interval.end_timestamp - bin_start)
-            self.worktime_accumulator[bin_start] += interval.duration
-
-    def to_df(self):
-        records = []
-        for timestamp, worktime in self.worktime_accumulator.items():
-            dt = datetime.fromtimestamp(timestamp)
-            records.append(
-                {
-                    "worktime": worktime,
-                    "start_datetime": dt,
-                    "year": dt.year,
-                    "month": dt.month,
-                    "day": dt.day,
-                    "hour": dt.hour,
-                    "year_month": dt.strftime("Y:%y %b"),
-                    "year_week": dt.strftime("Y:%y w:%V"),
-                    "year_day": dt.strftime("Y:%y %b d:%d"),
-                    "formatted_date": dt.strftime("%Y-%m-%d"),
-                    "dow": dt.strftime("%A"),
-                }
-            )
-        return pd.DataFrame(records)
-
-
 @lru_cache()
 def get_hourly_worktime_df():
-    intervals = History().all_intervals
-    discretizer = Discretizer(step=3600)
-    for interval in intervals:
-        discretizer.add_interval(interval)
-    df_hourly = discretizer.to_df()
-    df_hourly["worktime"] /= 3600
-    return df_hourly
+    history = History(dont_read_before=None)
+    first_datetime = history.all_intervals[0].start_datetime.replace(minute=0, second=0, microsecond=0)
+    last_datetime = (datetime.datetime.now() + datetime.timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+    bin_start_datetime = first_datetime
+    records = []
+    i = 0
+    pbar = tqdm()
+    while bin_start_datetime < last_datetime:
+        bin_end_datetime = bin_start_datetime + datetime.timedelta(hours=1)
+        worktime = get_worktime_between(bin_start_datetime, bin_end_datetime)
+        records.append(
+            {
+                "worktime": worktime / 3600,
+                "start_datetime": bin_start_datetime,
+                "year": bin_start_datetime.year,
+                "month": bin_start_datetime.month,
+                "day": bin_start_datetime.day,
+                "hour": bin_start_datetime.hour,
+                "year_month": bin_start_datetime.strftime("Y:%y %b"),
+                "year_week": bin_start_datetime.strftime("Y:%y w:%V"),
+                "year_day": bin_start_datetime.strftime("Y:%y %b d:%d"),
+                "formatted_date": bin_start_datetime.strftime("%Y-%m-%d"),
+                "dow": bin_start_datetime.strftime("%A"),
+            }
+        )
+        bin_start_datetime = bin_end_datetime
+        pbar.update(1)
+    return pd.DataFrame(records)
 
 
 def get_daily_worktime_df():
@@ -212,7 +178,7 @@ def get_ghost_plot(length=100):
     if target == 0:
         return ""
     # Higher quantile = ghost calibrated on your best days, lower quantile = ghost calibrated on your worst days
-    ghost_worktime = get_quantile_worktime_at(days, datetime.now().time(), quantile=0.75)
+    ghost_worktime = get_quantile_worktime_at(days, datetime.datetime.now().time(), quantile=0.75)
     ghost_position = min(ghost_worktime / target, 1)
     your_worktime = get_worktime_from_weekday(get_current_weekday())
     your_position = min(your_worktime / target, 1)
