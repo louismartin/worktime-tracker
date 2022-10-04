@@ -11,9 +11,9 @@ def start():
     while True:
         try:
             worktime_tracker.check_state()
-            summaries = [get_ghost_plot(length=50)]
+            summaries = worktime_tracker.get_week_summaries()
             if Config().show_day_worktime:
-                summaries.extend(worktime_tracker.get_week_summaries())
+                summaries.append(get_ghost_plot(length=50))
             print(" - ".join(summaries) + "\r", end="")
             time.sleep(REFRESH_RATE)
         except KeyboardInterrupt:

@@ -167,7 +167,7 @@ class WorktimeTracker:
         return f"Year overtime: {seconds_to_human_readable(overtime)}"
 
     def get_instant_summary(self):
-        work_ratio_last_period = get_work_ratio_since_timestamp(time.time() - 3600 / 2)
+        work_ratio_last_period = get_work_ratio_since_timestamp(time.time() - 15 * 60)
         instant_summary = f"{work_ratio_last_period:.0%}"
         if Config().show_day_worktime:
             worktime_today = get_worktime_from_weekday(get_current_weekday())
@@ -176,10 +176,12 @@ class WorktimeTracker:
 
     def get_week_summaries(self):
         """Nicely formatted day summaries for displaying to the user"""
-        summaries = [self.get_weekday_summary(weekday_idx) for weekday_idx in range(get_current_weekday() + 1)][::-1]
-        summaries += [
-            self.get_year_overtime_summary(),
-            self.get_month_overtime_summary(),
-            self.get_week_overtime_summary(),
-        ]
+        summaries = []
+        if Config().show_day_worktime:
+            summaries.extend([self.get_weekday_summary(weekday_idx) for weekday_idx in range(get_current_weekday() + 1)][::-1])
+            summaries.extend([
+                self.get_year_overtime_summary(),
+                self.get_month_overtime_summary(),
+                self.get_week_overtime_summary(),
+            ])
         return summaries
