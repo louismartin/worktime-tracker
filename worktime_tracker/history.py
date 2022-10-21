@@ -247,8 +247,8 @@ class History(metaclass=ArgsSingleton):
         if dont_count_days is None:
             dont_count_days = []
         # Assign the date to a variable as it might be can be called millions of times
-        start_date = start_datetime.date()
-        end_date = end_datetime.date()
+        start_date = get_day_start(start_datetime).date()
+        end_date = get_day_end(end_datetime).date()
         days = [day for day in self.days if start_date <= day.date <= end_date and day.date not in dont_count_days]
         return sum(day.get_worktime_between(start_datetime, end_datetime) for day in days)
 

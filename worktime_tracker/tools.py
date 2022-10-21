@@ -45,7 +45,8 @@ def rewrite_history_prompt():
 def get_productivity_plot(start_datetime: datetime, end_datetime: datetime):
     def format_timestamp(timestamp):
         d = datetime.datetime.fromtimestamp(timestamp)
-        return f"{d.hour}h{d.minute:02d}"
+        # Day of the week, hour, minute
+        return f"{d.strftime('%a %Hh%M')}"
 
     start_timestamp = start_datetime.timestamp()
     end_timestamp = end_datetime.timestamp()
