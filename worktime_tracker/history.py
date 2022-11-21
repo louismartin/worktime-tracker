@@ -198,6 +198,10 @@ class History(metaclass=ArgsSingleton):
         # TODO: Deprecate to use day abstraction instead?
         return [interval for day in self.days for interval in day.intervals]
 
+    @property
+    def current_day(self):
+        return self.days[-1]
+
     def refresh(self) -> None:
         if self._last_refresh is not None and time.time() - self._last_refresh < self.refresh_rate:
             return

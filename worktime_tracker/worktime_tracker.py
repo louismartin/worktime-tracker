@@ -167,8 +167,8 @@ class WorktimeTracker:
         return f"Year overtime: {seconds_to_human_readable(overtime)}"
 
     def get_instant_summary(self):
-        work_ratio_last_period = get_work_ratio_since_timestamp(time.time() - 15 * 60)
-        instant_summary = f"{work_ratio_last_period:.0%}"
+        current_work_streak = get_current_work_streak()
+        instant_summary = f"streak: {seconds_to_human_readable(current_work_streak)}"
         if Config().show_day_worktime:
             worktime_today = get_worktime_from_weekday(get_current_weekday())
             instant_summary = f"{instant_summary} - {seconds_to_human_readable(worktime_today)}"
@@ -185,3 +185,18 @@ class WorktimeTracker:
                 self.get_week_overtime_summary(),
             ])
         return summaries
+
+
+def get_workratio_last_period():
+    return get_work_ratio_since_timestamp(time.time() - 15 * 60)
+
+
+def get_current_work_streak():
+    day = History().current_day
+    current_work_streak_intervals = []
+    for interval in day.intervals[::-1]:
+        if not interval.is_work_interval and interval.duration > 10 * 60:
+            break
+        if interval.is_work_interval:
+            current_work_streak_intervals.append(interval)
+    return sum(interval.duration for interval in current_work_streak_intervals)
