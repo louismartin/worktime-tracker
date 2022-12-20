@@ -187,6 +187,7 @@ def get_ghost_plot(length=100):
 
 
 def pause():
+    # TODO: Use the current time to check time left (sleep is not accurate because tmux pauses python execution)
     duration = parse_time(input("Enter a duration to pause during a certain time (e.g. 2h30).\nDuration: "))
     if duration is not None:
         print(f"Pausing for {duration}.")
