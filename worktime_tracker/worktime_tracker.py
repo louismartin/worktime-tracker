@@ -182,12 +182,16 @@ class WorktimeTracker:
         """Nicely formatted day summaries for displaying to the user"""
         summaries = []
         if Config().show_day_worktime:
-            summaries.extend([self.get_weekday_summary(weekday_idx) for weekday_idx in range(get_current_weekday() + 1)][::-1])
-            summaries.extend([
-                self.get_year_overtime_summary(),
-                self.get_month_overtime_summary(),
-                self.get_week_overtime_summary(),
-            ])
+            summaries.extend(
+                [self.get_weekday_summary(weekday_idx) for weekday_idx in range(get_current_weekday() + 1)][::-1]
+            )
+            summaries.extend(
+                [
+                    self.get_year_overtime_summary(),
+                    self.get_month_overtime_summary(),
+                    self.get_week_overtime_summary(),
+                ]
+            )
         return summaries
 
 
