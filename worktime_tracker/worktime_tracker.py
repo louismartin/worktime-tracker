@@ -168,7 +168,11 @@ class WorktimeTracker:
 
     def get_instant_summary(self):
         current_work_streak = get_current_work_streak()
-        instant_summary = f"streak: {seconds_to_human_readable(current_work_streak)}"
+        if current_work_streak > 0:
+            instant_summary = f"streak: {seconds_to_human_readable(current_work_streak)}"
+        else:
+            current_rest_time = get_current_rest_time()
+            instant_summary = f"break: {seconds_to_human_readable(current_rest_time)}"
         if Config().show_day_worktime:
             worktime_today = get_worktime_from_weekday(get_current_weekday())
             instant_summary = f"{instant_summary} - {seconds_to_human_readable(worktime_today)}"
@@ -200,3 +204,14 @@ def get_current_work_streak():
         if interval.is_work_interval:
             current_work_streak_intervals.append(interval)
     return sum(interval.duration for interval in current_work_streak_intervals)
+
+
+def get_current_rest_time():
+    day = History().current_day
+    current_rest_streak_intervals = []
+    for interval in day.intervals[::-1]:
+        if interval.is_work_interval and interval.duration > 15 * 60:
+            break
+        if not interval.is_work_interval:
+            current_rest_streak_intervals.append(interval)
+    return sum(interval.duration for interval in current_rest_streak_intervals)
