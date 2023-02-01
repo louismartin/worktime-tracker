@@ -53,7 +53,7 @@ def get_dont_count_days():
 
 def get_worktime_between(start_datetime: datetime, end_datetime: datetime):
     # TODO: Deprecate this method and use History directly
-    assert start_datetime <= end_datetime
+    assert start_datetime <= end_datetime, f"start_datetime={start_datetime} > end_datetime={end_datetime}"
     history = History()  # Singleton
     return history.get_worktime_between(start_datetime, end_datetime, dont_count_days=get_dont_count_days())
 
