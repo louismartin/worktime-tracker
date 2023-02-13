@@ -168,15 +168,16 @@ class WorktimeTracker:
 
     def get_instant_summary(self):
         current_work_streak = get_current_work_streak()
-        if current_work_streak > 0:
-            instant_summary = f"streak: {seconds_to_human_readable(current_work_streak)}"
-        else:
+        worktime_today = get_worktime_from_weekday(get_current_weekday())
+        instant_summary_parts = []
+        if current_work_streak > 5 * 60:
+            instant_summary_parts.append(f"streak: {seconds_to_human_readable(current_work_streak)}")
+        elif worktime_today > 30 * 60:  # Display rest time only if we have worked for at least 30 minutes
             current_rest_time = get_current_rest_time()
-            instant_summary = f"break: {seconds_to_human_readable(current_rest_time)}"
+            instant_summary_parts.append(f"break: {seconds_to_human_readable(current_rest_time)}")
         if Config().show_day_worktime:
-            worktime_today = get_worktime_from_weekday(get_current_weekday())
-            instant_summary = f"{instant_summary} - {seconds_to_human_readable(worktime_today)}"
-        return instant_summary
+            instant_summary_parts.append(f"{seconds_to_human_readable(worktime_today)}")
+        return " - ".join(instant_summary_parts)
 
     def get_week_summaries(self):
         """Nicely formatted day summaries for displaying to the user"""
