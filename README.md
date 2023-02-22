@@ -6,7 +6,7 @@ Tool to track work time during the day using multiple desktops/workspaces on mac
 
 ### Requirements
 
-Python >= 3.6
+Python >= 3.8
 
 ### Installing
 
@@ -32,3 +32,10 @@ python main.py
 
 
 TODO: Add screenshot of plots
+
+
+### Tests
+
+```
+pytest tests/
+```
