@@ -3,6 +3,7 @@ from functools import lru_cache
 import subprocess
 import time
 import tempfile
+import re
 
 import numpy as np
 import pandas as pd
@@ -25,19 +26,27 @@ from worktime_tracker.worktime_tracker import WorktimeTracker
 
 
 def rewrite_history_prompt():
+    def parse_input(input_str, now):
+        """
+        Parse input in the format "hh:mm +- day_offset" and return a datetime
+        e.g. "12:00 +1" or "12:00+1" means 12:00 on the next day
+        e.g. "12:00 -1" or "12:00-1" means 12:00 on the previous day
+        e.g. "12:00" means 12:00 on the current day
+        e.g. "12:00 +0" means 12:00 on the current day
+        """
+        hour, minute, day_offset = re.match(r"(\d+):(\d+)(?:\s*([+-]\d+))?", input_str).groups()
+        hour = int(hour)
+        minute = int(minute)
+        day_offset = int(day_offset or 0)
+        return (datetime.datetime.now() + datetime.timedelta(days=day_offset)).replace(
+            hour=hour, minute=minute, second=0, microsecond=0
+        )
+
     now = datetime.datetime.now()
-    start = input("Start time? (hh:mm): ")
-    start_hour, start_minute = [int(x) for x in start.split(":")]
-    end = input("End time? (hh:mm): ")
-    end_hour, end_minute = [int(x) for x in end.split(":")]
-    day_offset = input("Day offset? (default=0): ")
-    day_offset = int(day_offset) if day_offset != "" else 0
-    start_datetime = (now + datetime.timedelta(days=day_offset)).replace(
-        hour=start_hour, minute=start_minute, second=0, microsecond=0
-    )
-    end_datetime = (now + datetime.timedelta(days=day_offset)).replace(
-        hour=end_hour, minute=end_minute, second=0, microsecond=0
-    )
+    start = input("Start time? (hh:mm +-day_offset): ")
+    end = input("End time? (hh:mm +-day_offset): ")
+    start_datetime = parse_input(start, now)
+    end_datetime = parse_input(end, now)
     new_state = input("New state?: ")
     rewrite_history(start_datetime, end_datetime, new_state)
 
