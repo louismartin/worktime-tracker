@@ -1,4 +1,4 @@
 {
     "interface": "macos-status-bar",
-    "show_day_worktime": false
+    "show_day_worktime": true
 }
