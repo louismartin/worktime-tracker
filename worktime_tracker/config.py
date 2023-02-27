@@ -16,11 +16,16 @@ class Config:
     interface: str = "cli"
     show_day_worktime: bool = True
 
-    def __init__(self) -> None:
+    def __post_init__(self):
         self.load_config()
 
     def load_config(self):
-        if self.config_path.exists():
-            with self.config_path.open() as f:
-                config = json.load(f)
-                self.__dict__.update(config)
+        if not self.config_path.exists():
+            self.save_config()
+        with self.config_path.open() as f:
+            config = json.load(f)
+            self.__dict__.update(config)
+
+    def save_config(self):
+        with self.config_path.open("w") as f:
+            json.dump(self.__dict__, f, indent=4)
