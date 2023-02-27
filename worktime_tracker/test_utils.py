@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-from worktime_tracker.logs import _ALL_LOGS, write_log
+from worktime_tracker.logs import write_log
 
 
 @contextmanager
@@ -20,7 +20,6 @@ def mock_log_file(mocked_logs):
         Log(datetime(2021, 12, 9, 12, 4, 1), "personal"),
     ])
     """
-    _ALL_LOGS[:] = []  # Reset cached logs
     # Create a temp dir instead of a temp file because the rewrite_history() function can create additional files
     # in the same dir as the logs file and we want them to be removed when exiting
     with tempfile.TemporaryDirectory() as temp_dir:

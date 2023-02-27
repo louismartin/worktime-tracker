@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 
-from worktime_tracker.worktime_tracker import WorktimeTracker, get_average_worktime_at, get_days
+from worktime_tracker.worktime_tracker import WorktimeTracker
 from worktime_tracker.date_utils import get_day_start, get_day_end
+from worktime_tracker.tools import get_average_worktime_at
+from worktime_tracker.history import History
 
 
 # TODO: Check how to use fixtures
@@ -12,6 +14,6 @@ def test_worktime_tracker():
 
 
 def test_get_average_worktime_at():
-    days = get_days()
+    days = History().days
     assert get_average_worktime_at(days, (get_day_start(datetime.now()) + timedelta(seconds=10)).time()) < 3600
     assert get_average_worktime_at(days, (get_day_end(datetime.now()) - timedelta(seconds=10)).time()) > 3600

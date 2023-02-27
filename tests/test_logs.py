@@ -1,14 +1,11 @@
 import copy
 from datetime import datetime
 
+from worktime_tracker.history import History, Interval
 from worktime_tracker.logs import (
-    _ALL_LOGS,
     Log,
     get_all_logs,
-    get_all_intervals,
-    get_intervals,
     rewrite_history,
-    Interval,
 )
 from worktime_tracker.worktime_tracker import get_worktime_between
 from worktime_tracker.test_utils import mock_log_file
@@ -22,12 +19,13 @@ def test_get_intervals():
         Log(datetime(2021, 12, 9, 12, 4, 1), "personal"),
     ]
     with mock_log_file(mocked_logs):
-        get_all_logs()
+        initial_logs = copy.deepcopy(get_all_logs())
+        print(initial_logs)
         start_datetime = datetime(2021, 12, 8, 7, 0, 0)
         end_datetime = datetime(2021, 12, 9, 7, 0, 0)
-        initial_logs = copy.deepcopy(_ALL_LOGS)
-        print(initial_logs)
-        assert get_intervals(start_datetime, end_datetime) == [
+        history = History(dont_read_before=None)
+        intervals = history.all_intervals
+        assert Interval.get_intervals_between(intervals, start_datetime, end_datetime) == [
             Interval(Log(datetime(2021, 12, 8, 7, 0, 0), "locked"), Log(datetime(2021, 12, 8, 17, 6, 13), "work")),
             Interval(Log(datetime(2021, 12, 8, 17, 6, 13), "work"), Log(datetime(2021, 12, 8, 17, 24, 18), "personal")),
             Interval(
@@ -35,7 +33,7 @@ def test_get_intervals():
             ),
         ]
         # Check that global variable _ALL_LOGS is not modified
-        assert initial_logs == _ALL_LOGS
+        assert initial_logs == get_all_logs()
 
 
 def test_get_all_intervals():
@@ -46,7 +44,8 @@ def test_get_all_intervals():
         Log(datetime(2021, 12, 9, 12, 4, 1), "personal"),
     ]
     with mock_log_file(mocked_logs):
-        intervals = get_all_intervals()
+        history = History(dont_read_before=None)
+        intervals = history.all_intervals
         assert len(intervals) == len(mocked_logs)
         assert intervals[-1].start_log == mocked_logs[-1]
 
