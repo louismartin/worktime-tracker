@@ -92,11 +92,10 @@ def get_worktime_target_from_datetime(dt):
         return 0
     if dt.date() not in [day.date for day in History().days if day.worktime > 0]:
         # TODO: If that's too slow we can only compare to the oldest day in the history
-        # Don't consider days that where not worked
+        # Don't consider days that were not worked
         return 0
     # 1 means full day off, 0.5 half a day off, 0 not a day off
-    dont_count_proportion = get_days_off()
-    dont_count_proportion = dont_count_proportion.get(dt.date(), 0)
+    dont_count_proportion = get_days_off().get(dt.date(), 0)
     return WorktimeTracker.targets[get_weekday_idx_from_datetime(dt)] * (1 - dont_count_proportion)
 
 
@@ -145,6 +144,7 @@ class WorktimeTracker:
         write_last_check(timestamp)
         state = get_state()
         maybe_write_log(Log(timestamp, state))
+        print(f"State: {state}, last state: {last_log.state}")
         return state != last_log.state
 
     def get_weekday_summary(self, weekday_idx):
@@ -171,13 +171,13 @@ class WorktimeTracker:
         worktime_today = get_worktime_from_weekday(get_current_weekday())
         instant_summary_parts = []
         if current_work_streak > 5 * 60:
-            instant_summary_parts.append(f"streak: {seconds_to_human_readable(current_work_streak)}")
+            instant_summary_parts.append(f"🔥{seconds_to_human_readable(current_work_streak)}")
         elif worktime_today > 30 * 60:  # Display rest time only if we have worked for at least 30 minutes
             current_rest_time = get_current_rest_time()
-            instant_summary_parts.append(f"break: {seconds_to_human_readable(current_rest_time)}")
+            instant_summary_parts.append(f"☕{seconds_to_human_readable(current_rest_time)}")
         if Config().show_day_worktime:
-            instant_summary_parts.append(f"{seconds_to_human_readable(worktime_today)}")
-        return " - ".join(instant_summary_parts)
+            instant_summary_parts.append(f"⌛{seconds_to_human_readable(worktime_today)}")
+        return " ".join(instant_summary_parts)
 
     def get_week_summaries(self):
         """Nicely formatted day summaries for displaying to the user"""

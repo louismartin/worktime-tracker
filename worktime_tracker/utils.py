@@ -36,21 +36,23 @@ def reverse_read_lines(filename, buf_size=8192):
 
 
 def seconds_to_human_readable(seconds):
-    sign = "" if seconds >= 0 else "-"
-    seconds = int(abs(seconds))  # Convert to positive
+    sign = "-" if seconds < 0 else ""
+    seconds = abs(int(seconds))  # Convert to positive
     td = timedelta(seconds=seconds)
+
     days = td.days
     hours = td.seconds // 3600
     minutes = (td.seconds // 60) % 60
-    days_str = f"{days}d " if days > 0 else ""
-    hours_str = f"{hours}h " if hours > 0 else ""
-    minutes_str = f"{minutes}m"
-    if hours > 0:
-        # Display as 2h05m instead of 2h5m
-        minutes_str = f"{minutes:02d}m"
-    if days == 0:
-        hours_str = hours_str.strip(" ")  # Display as 3d 2h 25 but as 2h25 if no days
-    return f"{sign}{days_str}{hours_str}{minutes_str}".strip()
+
+    parts = []
+    if days > 0:
+        parts.append(f"{days}d")
+    if hours > 0 or days > 0:
+        parts.append(f"{hours}:{minutes:02d}")
+    else:
+        parts.append(f"{minutes:02d}")
+
+    return f"{sign}{' '.join(parts)}"
 
 
 def yield_lines(filepath):

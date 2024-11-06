@@ -1,9 +1,9 @@
 import datetime
-from functools import lru_cache
-import subprocess
-import time
-import tempfile
 import re
+import subprocess
+import tempfile
+import time
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
@@ -12,17 +12,20 @@ from tqdm import tqdm
 
 from worktime_tracker.constants import WORK_STATES
 from worktime_tracker.date_utils import (
+    coerce_to_datetime,
     get_current_day_end,
     get_current_day_start,
     get_current_weekday,
-    coerce_to_datetime,
     parse_time,
 )
 from worktime_tracker.history import History
-from worktime_tracker.utils import seconds_to_human_readable
-from worktime_tracker.worktime_tracker import get_worktime_between, get_worktime_from_weekday
 from worktime_tracker.logs import rewrite_history
-from worktime_tracker.worktime_tracker import WorktimeTracker
+from worktime_tracker.utils import seconds_to_human_readable
+from worktime_tracker.worktime_tracker import (
+    WorktimeTracker,
+    get_worktime_between,
+    get_worktime_from_weekday,
+)
 
 
 def rewrite_history_prompt():
@@ -144,7 +147,7 @@ def get_daily_worktime_df():
     df_hourly = get_hourly_worktime_df()
     daily_columns = [col for col in df_hourly.columns if col not in ["hour", "start_datetime", "worktime"]]
     return (
-        df_hourly.groupby(daily_columns)["start_datetime", "worktime"]
+        df_hourly.groupby(daily_columns)[["start_datetime", "worktime"]]
         .agg({"start_datetime": "min", "worktime": "sum"})
         .reset_index()
     )

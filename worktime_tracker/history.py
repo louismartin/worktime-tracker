@@ -12,7 +12,7 @@ class Interval:
     """Represents an interval of time associated to a given state, i.e. a start and end log."""
 
     def __init__(self, start_log: Log, end_log: Log):
-        assert start_log <= end_log
+        assert start_log <= end_log, f"{start_log=}, {end_log=}"
         assert (
             end_log.timestamp - start_log.timestamp <= 365 * 24 * 60 * 60
         ), f"Intervals cannot be longer than 1 year: {start_log=}, {end_log=}"
