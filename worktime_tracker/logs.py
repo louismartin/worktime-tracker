@@ -1,3 +1,4 @@
+import fcntl
 import time
 import shutil
 import datetime
@@ -56,11 +57,15 @@ def write_log(log: Log) -> None:
 
 
 def maybe_write_log(log: Log):
-    # TODO: lock file
-    last_log = read_last_log()
-    if last_log.state == log.state:
-        return
-    write_log(log)
+    with open(LOGS_PATH, "a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            last_log = read_last_log()
+            if last_log is not None and last_log.state == log.state:
+                return
+            f.write(f"{log.timestamp}\t{log.state}\n")
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
 
 
 def parse_log_line(log_line: str) -> Log:
@@ -121,17 +126,20 @@ def get_all_logs():
 def rewrite_history(start_datetime: datetime.datetime, end_datetime: datetime.datetime, new_state: STATES_TYPE) -> None:
     from worktime_tracker.history import History  # Circular import
 
-    # Careful, this methods rewrites the entire log file
-    backup_dir = LOGS_PATH.parent / "backup"
-    backup_dir.mkdir(exist_ok=True)
-    shutil.copy(LOGS_PATH, backup_dir / f"{LOGS_PATH.name}.bck{int(time.time())}")
-    logs = get_all_logs()
-    logs += [Log(time.time(), "locked")]  # So that we take the last interval into account
-    # TODO: Rewrite the function to use the Log class
-    new_logs = get_rewritten_history_logs(logs, start_datetime, end_datetime, new_state)
-    with LOGS_PATH.open("w") as f:
-        for timestamp, state in new_logs:
-            f.write(f"{timestamp}\t{state}\n")
+    with open(LOGS_PATH, "r") as lock_file:
+        fcntl.flock(lock_file, fcntl.LOCK_EX)
+        try:
+            backup_dir = LOGS_PATH.parent / "backup"
+            backup_dir.mkdir(exist_ok=True)
+            shutil.copy(LOGS_PATH, backup_dir / f"{LOGS_PATH.name}.bck{int(time.time())}")
+            logs = get_all_logs()
+            logs += [Log(time.time(), "locked")]  # So that we take the last interval into account
+            new_logs = get_rewritten_history_logs(logs, start_datetime, end_datetime, new_state)
+            with LOGS_PATH.open("w") as f:
+                for timestamp, state in new_logs:
+                    f.write(f"{timestamp}\t{state}\n")
+        finally:
+            fcntl.flock(lock_file, fcntl.LOCK_UN)
     History.clear()
 
 

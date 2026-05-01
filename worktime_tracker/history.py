@@ -27,20 +27,17 @@ class Interval:
 
     @staticmethod
     def split_interval_by_day(interval: "Interval") -> list["Interval"]:
-        """Split intervals that spans multiple days into multiple intervals or return [interval] if it's not needed
-
-        args: interval
-        return: list of intervals
-        """
-        day_end = get_day_end(interval.start_datetime)
-        if interval.end_datetime < day_end:
-            return [interval]
-        interval_in_day, interval_after_day = interval.split(day_end)
-        try:
-            return [interval_in_day] + Interval.split_interval_by_day(interval_after_day)
-        except RecursionError as e:
-            print(interval)
-            raise e
+        """Split an interval that spans multiple days into one interval per day."""
+        result = []
+        remaining = interval
+        while True:
+            day_end = get_day_end(remaining.start_datetime)
+            if remaining.end_datetime < day_end:
+                result.append(remaining)
+                break
+            interval_in_day, remaining = remaining.split(day_end)
+            result.append(interval_in_day)
+        return result
 
     @staticmethod
     def split_intervals_by_day(intervals: list["Interval"]) -> list["Interval"]:
