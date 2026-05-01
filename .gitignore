@@ -1,8 +1,13 @@
 *.pyc
 *.swp
 *.ipynb
+*.egg-info/
+*.log
 .venv
+.vscode/
 .logs/*
 last_check.txt
 space_types.json
 config.json
+stderr.log
+stdout.log
