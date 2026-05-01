@@ -181,6 +181,9 @@ def get_average_worktime_at(days, dt_time):
 
 def get_quantile_worktime_at(days, dt_time, quantile):
     worktimes_at = get_worktimes_at(days, dt_time)
+    if len(worktimes_at) == 0:
+        print(f"WARNING: No worktimes at {dt_time}")
+        return 0
     return np.quantile(worktimes_at, quantile)
 
 
