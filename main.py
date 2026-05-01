@@ -4,11 +4,12 @@ import time
 import json
 from worktime_tracker.config import Config
 
-from worktime_tracker.spaces import get_space_id
-from worktime_tracker.constants import SPACE_TYPES_PATH
 
+def setup_spaces_windows():
+    """Windows still uses the old space_types.json mapping."""
+    from worktime_tracker.constants import SPACE_TYPES_PATH
+    from worktime_tracker.windows.get_space_id import get_space_id
 
-def setup_spaces():
     if SPACE_TYPES_PATH.exists():
         return
     print(
@@ -71,7 +72,6 @@ def macos_main():
 
 def linux_main():
     raise NotImplementedError("Linux not supported yet")
-    # start_pyqt_gui()  # TODO: There is no get_state() method yet
 
 
 def windows_main():
@@ -84,8 +84,8 @@ if __name__ == "__main__":
     elif sys.platform == "linux":
         main = linux_main
     elif sys.platform == "win32":
+        setup_spaces_windows()
         main = windows_main
     else:
         raise NotImplementedError(f"OS {sys.platform} is not supported")
-    setup_spaces()
     main()
