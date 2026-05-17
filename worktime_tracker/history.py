@@ -176,11 +176,15 @@ class History(metaclass=ArgsSingleton):
         """Clear the history singleton"""
         History._instances.clear()
 
-    def __init__(self, dont_read_before=datetime.datetime.now() - datetime.timedelta(days=365), refresh_rate=1) -> None:
+    def __init__(self, dont_read_before="default", refresh_rate=1) -> None:
         print("Initializing history...")
         self._days_dict = {}
-        # TODO: We should raise an error when trying to get worktime before the dont_read_before date
-        self.dont_read_before = dont_read_before if dont_read_before is not None else datetime.datetime.min
+        if dont_read_before == "default":
+            self.dont_read_before = datetime.datetime.fromtimestamp(time.time()) - datetime.timedelta(days=365)
+        elif dont_read_before is None:
+            self.dont_read_before = datetime.datetime.min
+        else:
+            self.dont_read_before = dont_read_before
         self._last_read_log = None
         self._last_refresh = None
         self.refresh_rate = refresh_rate

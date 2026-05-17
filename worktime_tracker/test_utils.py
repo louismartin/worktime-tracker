@@ -11,20 +11,21 @@ def mock_log_file(mocked_logs):
     """
     Context manager to mock log file for testing by changing the global constant LOGS_PATH to a temporary file.
     It will then write the dummy logs to the temporary file.
-
-    Example usage:
-    mock_log_file([
-        Log(datetime(2021, 12, 7, 17, 6, 13), "locked"),
-        Log(datetime(2021, 12, 8, 17, 6, 13), "work"),
-        Log(datetime(2021, 12, 8, 17, 24, 18), "personal"),
-        Log(datetime(2021, 12, 9, 12, 4, 1), "personal"),
-    ])
+    Also clears the History singleton and mocks time.time() to return a timestamp
+    just after the last mocked log (so the dummy "now" interval doesn't span years).
     """
-    # Create a temp dir instead of a temp file because the rewrite_history() function can create additional files
-    # in the same dir as the logs file and we want them to be removed when exiting
+    from worktime_tracker.history import History
+
+    fake_timestamp = mocked_logs[-1].timestamp + 60 if mocked_logs else 0
+
     with tempfile.TemporaryDirectory() as temp_dir:
         mocked_logs_path = Path(temp_dir) / "mocked_logs.tsv"
-        with patch("worktime_tracker.logs.LOGS_PATH", mocked_logs_path):
+        History.clear()
+        with (
+            patch("worktime_tracker.logs.LOGS_PATH", mocked_logs_path),
+            patch("worktime_tracker.history.time.time", return_value=fake_timestamp),
+        ):
             for log in mocked_logs:
                 write_log(log)
             yield
+        History.clear()

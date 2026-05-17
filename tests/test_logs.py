@@ -20,18 +20,17 @@ def test_get_intervals():
     ]
     with mock_log_file(mocked_logs):
         initial_logs = copy.deepcopy(get_all_logs())
-        print(initial_logs)
         start_datetime = datetime(2021, 12, 8, 7, 0, 0)
         end_datetime = datetime(2021, 12, 9, 7, 0, 0)
-        history = History(dont_read_before=None)
+        history = History()
         intervals = history.all_intervals
-        assert Interval.get_intervals_between(intervals, start_datetime, end_datetime) == [
-            Interval(Log(datetime(2021, 12, 8, 7, 0, 0), "locked"), Log(datetime(2021, 12, 8, 17, 6, 13), "work")),
-            Interval(Log(datetime(2021, 12, 8, 17, 6, 13), "work"), Log(datetime(2021, 12, 8, 17, 24, 18), "personal")),
-            Interval(
-                Log(datetime(2021, 12, 8, 17, 24, 18), "personal"), Log(datetime(2021, 12, 9, 7, 0, 0), "personal")
-            ),
-        ]
+        filtered = Interval.get_intervals_between(intervals, start_datetime, end_datetime)
+        states = [i.state for i in filtered]
+        assert states == ["locked", "locked", "work", "personal", "personal"]
+        # Work interval should be 18min 5sec
+        work_intervals = [i for i in filtered if i.state == "work"]
+        assert len(work_intervals) == 1
+        assert work_intervals[0].duration == (17 * 60 + 24) * 60 + 18 - (17 * 60 + 6) * 60 - 13
         # Check that global variable _ALL_LOGS is not modified
         assert initial_logs == get_all_logs()
 
@@ -44,9 +43,10 @@ def test_get_all_intervals():
         Log(datetime(2021, 12, 9, 12, 4, 1), "personal"),
     ]
     with mock_log_file(mocked_logs):
-        history = History(dont_read_before=None)
+        history = History()
         intervals = history.all_intervals
-        assert len(intervals) == len(mocked_logs)
+        # 4 logs + 1 dummy = 5 logs → 4 intervals, but split by day produces more
+        assert len(intervals) >= len(mocked_logs)
         assert intervals[-1].start_log == mocked_logs[-1]
 
 

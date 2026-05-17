@@ -176,6 +176,8 @@ def get_worktimes_at(days, dt_time):
 
 def get_average_worktime_at(days, dt_time):
     worktimes_at = get_worktimes_at(days, dt_time)
+    if len(worktimes_at) == 0:
+        return 0
     return sum(worktimes_at) / len(worktimes_at)
 
 

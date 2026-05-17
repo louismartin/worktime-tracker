@@ -2,12 +2,9 @@
 *.swp
 *.ipynb
 *.egg-info/
-*.log
-.venv
+__pycache__/
+.venv/
 .vscode/
-.logs/*
-last_check.txt
-space_types.json
+.logs/
 config.json
-stderr.log
-stdout.log
+space_types.json

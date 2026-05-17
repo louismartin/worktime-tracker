@@ -1,41 +1,64 @@
 # Worktime Tracker
 
-Tool to track work time during the day using multiple desktops/workspaces on macOS (and soon Windows).
+Tool to track work time during the day using multiple desktops/workspaces on macOS.
+
+The first Space (index 0) is treated as "personal", all others as "work". Screen lock is detected as "locked".
 
 ## Getting Started
 
 ### Requirements
 
-Python >= 3.8
+- macOS
+- Python >= 3.8
+- Multiple macOS Spaces (desktops) configured
 
 ### Installing
 
-Clone the repository, cd into it and install with:
+Clone the repository, cd into it, and install dependencies:
 ```bash
-pip setup.py install
+pip install -r requirements.txt
+pip install -r requirements_macos.txt
 ```
 
-### macOS
+### Running manually
 
-Activate and deactivate launchd with
-```bash
-launchctl load ~/Library/LaunchAgents/com.worktimetracker.worktimetracker.plist
-launchctl unload ~/Library/LaunchAgents/com.worktimetracker.worktimetracker.plist
-```
-
-### Running
-
-Run with:
 ```bash
 python main.py
 ```
 
+### Running automatically (recommended)
 
-TODO: Add screenshot of plots
+Install the Launch Agent so the tracker starts on login and restarts if it crashes.
+**Important:** Run this from a regular terminal, not from a sandboxed app (e.g. Claude Code),
+because macOS blocks LaunchAgent plists written by sandboxed processes.
 
+```bash
+python install_launchagent.py install
+```
+
+Other commands:
+```bash
+python install_launchagent.py status    # Check if running
+python install_launchagent.py restart   # Restart the agent
+python install_launchagent.py uninstall # Stop and remove the agent
+```
+
+Logs are written to `.logs/launchagent_stdout.log` and `.logs/launchagent_stderr.log`.
+
+### Configuration
+
+Edit `config.json` to change settings:
+```json
+{
+    "interface": "macos-status-bar",
+    "show_day_worktime": true
+}
+```
+
+Available interfaces: `cli`, `cli-curses`, `macos-status-bar`.
 
 ### Tests
 
-```
+```bash
 pytest tests/
 ```

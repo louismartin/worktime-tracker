@@ -1,91 +1,41 @@
 #!/usr/bin/env python
 import sys
-import time
-import json
+
 from worktime_tracker.config import Config
 
 
-def setup_spaces_windows():
-    """Windows still uses the old space_types.json mapping."""
-    from worktime_tracker.constants import SPACE_TYPES_PATH
-    from worktime_tracker.windows.get_space_id import get_space_id
-
-    if SPACE_TYPES_PATH.exists():
-        return
-    print(
-        "Welcome to WorktimeTracker. In order for the tool to work, you need to create multiple spaces.\n"
-        'Please go into each of your spaces and indicate whether it is a "Work" or a "Personal" space'
-    )
-    spaces = {}
-    time.sleep(3)
-    try:
-        while True:
-            space_id = get_space_id()
-            if space_id in spaces:
-                print(f"Move to another workspace or hit ctrl-c to finish (current: {space_id}).")
-                time.sleep(3)
-                continue
-            answer = input(f'{space_id}: Is this a "Work" or a "Personal" space? (w/p): ').lower()
-            assert answer in ["w", "p"]
-            space_type = {"w": "work", "p": "personal"}[answer]
-            print(f"Writing that {space_id} is a {space_type} space.")
-            spaces[space_id] = space_type
-    except KeyboardInterrupt:
-        print(f"Writing spaces to {SPACE_TYPES_PATH}")
-    with open(SPACE_TYPES_PATH, "w", encoding="utf8") as f:
-        json.dump(spaces, f)
-
-
 def start_macos_status_bar_app():
-    from worktime_tracker.macos.status_bar import start  # pylint: disable=import-outside-toplevel
-
-    start()
-
-
-def start_pyqt_gui():
-    from worktime_tracker.pyqt_gui import start  # pylint: disable=import-outside-toplevel
+    from worktime_tracker.macos.status_bar import start
 
     start()
 
 
 def start_cli():
-    from worktime_tracker.cli import start  # pylint: disable=import-outside-toplevel
+    from worktime_tracker.cli import start
 
     start()
 
 
 def start_cli_curses():
-    from worktime_tracker.cli_curses import start  # pylint: disable=import-outside-toplevel
+    from worktime_tracker.cli_curses import start
 
     start()
 
 
-def macos_main():
-    print("Starting Worktime Tracker for macOS")
-    start = {
-        "cli": start_cli,
-        "cli-curses": start_cli_curses,
-        "macos-status-bar": start_macos_status_bar_app,
-    }[Config().interface]
-    start()
+INTERFACES = {
+    "cli": start_cli,
+    "cli-curses": start_cli_curses,
+    "macos-status-bar": start_macos_status_bar_app,
+}
 
 
-def linux_main():
-    raise NotImplementedError("Linux not supported yet")
-
-
-def windows_main():
-    start_pyqt_gui()
+def main():
+    if sys.platform != "darwin":
+        raise NotImplementedError(f"OS {sys.platform} is not supported")
+    interface = Config().interface
+    print(f"Starting Worktime Tracker (interface={interface})")
+    INTERFACES[interface]()
 
 
 if __name__ == "__main__":
-    if sys.platform == "darwin":
-        main = macos_main
-    elif sys.platform == "linux":
-        main = linux_main
-    elif sys.platform == "win32":
-        setup_spaces_windows()
-        main = windows_main
-    else:
-        raise NotImplementedError(f"OS {sys.platform} is not supported")
     main()
