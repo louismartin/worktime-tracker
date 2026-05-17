@@ -20,9 +20,11 @@ from pathlib import Path
 LABEL = "com.worktimetracker.worktimetracker"
 PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{LABEL}.plist"
 PROJECT_DIR = Path(__file__).resolve().parent
-LOGS_DIR = PROJECT_DIR / ".logs"
-STDOUT_LOG = LOGS_DIR / "launchagent_stdout.log"
-STDERR_LOG = LOGS_DIR / "launchagent_stderr.log"
+# Logs must be on the local filesystem, not on FUSE/Cryptomator volumes,
+# because launchd cannot write to FUSE mounts.
+LOG_DIR = Path.home() / ".local" / "log"
+STDOUT_LOG = LOG_DIR / "worktime-tracker-stdout.log"
+STDERR_LOG = LOG_DIR / "worktime-tracker-stderr.log"
 
 
 def get_python_executable():
@@ -99,7 +101,7 @@ def bootstrap():
 
 
 def install():
-    LOGS_DIR.mkdir(exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
     plist_content = generate_plist()
 
     # Unload first if already loaded

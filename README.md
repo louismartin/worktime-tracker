@@ -43,7 +43,7 @@ python install_launchagent.py restart   # Restart the agent
 python install_launchagent.py uninstall # Stop and remove the agent
 ```
 
-Logs are written to `.logs/launchagent_stdout.log` and `.logs/launchagent_stderr.log`.
+Logs are written to `~/.local/log/worktime-tracker-stdout.log` and `~/.local/log/worktime-tracker-stderr.log`.
 
 ### Configuration
 
